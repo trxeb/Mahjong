@@ -8,7 +8,7 @@ import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWith
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
 // Import utility functions (ensure these exist)
-import { calculateScore } from './utils/mahjongScoring'; // Example: needs to be implemented
+import { calculateScore } from './utils/mahjongScoring';
 
 // Import components
 import CreateRoomModal from './components/CreateRoomModal';
@@ -19,7 +19,11 @@ import RoomView from './components/Views/RoomView';
 import LeaderboardView from './components/LeaderboardView';
 import ProfileView from './components/ProfileView';
 import AuthForm from './components/AuthForm';
-import HuView from './components/Views/HuView'; // New HuView component
+// HuView is now managed as a modal within RoomView, no longer a top-level view
+// import HuView from './components/Views/HuView';
+
+// --- NEW: Import SettingsView ---
+import SettingsView from './components/Views/settingsView'; // <-- THIS LINE WAS MISSING!
 
 // Import the new appStyles
 import appStyles from './styles/appStyles';
@@ -35,18 +39,16 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase only once
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app); // Get Firebase Auth instance
-const firestore = getFirestore(app); // Get Firestore instance
+const auth = getAuth(app);
+const firestore = getFirestore(app);
 
 const MahjongApp = () => {
-  // --- STATE MANAGEMENT ---
   const [session, setSession] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [currentPlayer, setCurrentPlayer] = useState(null);
 
-  const [currentView, setCurrentView] = useState('home'); // 'home', 'room', 'leaderboard', 'profile', 'auth', 'hu'
+  const [currentView, setCurrentView] = useState('home');
   const [gameRooms, setGameRooms] = useState({});
   const [currentRoom, setCurrentRoom] = useState(null);
 
@@ -64,9 +66,6 @@ const MahjongApp = () => {
   const [socket, setSocket] = useState(null);
 
 
-  // --- EFFECT HOOKS ---
-
-  // 1. Firebase Authentication State Listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setSession(user);
@@ -77,7 +76,6 @@ const MahjongApp = () => {
     return () => unsubscribe();
   }, []);
 
-  // 2. Fetch User Profile from Firestore (after auth state changes)
   const fetchUserProfile = useCallback(async (userId) => {
     if (!userId) {
       setCurrentPlayer(null);
@@ -85,17 +83,31 @@ const MahjongApp = () => {
     }
 
     try {
-      const profileDocRef = doc(firestore, 'profiles', userId);
-      const profileDoc = await getDoc(profileDocRef);
-
-      if (!profileDoc.exists()) {
-        console.warn("Profile not found in Firestore for user:", userId);
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) {
+        console.warn("App: No Firebase ID token available to fetch profile.");
         setCurrentPlayer(null);
         return;
       }
 
-      const profileData = profileDoc.data();
-      console.log('Fetched user profile from Firestore:', profileData);
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5002';
+      const response = await fetch(`${backendUrl}/api/profiles/me`, {
+        headers: {
+          'Authorization': `Bearer ${idToken}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('App: Failed to fetch user profile from backend:', errorData);
+        if (response.status === 404) {
+             console.warn("App: Profile not found for this user. Ensure Firebase profile creation (during signup) is active and Firestore rules allow read for authenticated users.");
+        }
+        setCurrentPlayer(null);
+        return;
+      }
+      const profileData = await response.json();
+      console.log('App: Fetched user profile from backend:', profileData);
 
       setCurrentPlayer({
         id: userId,
@@ -107,10 +119,10 @@ const MahjongApp = () => {
       });
 
     } catch (error) {
-      console.error('Error fetching user profile from Firestore:', error);
+      console.error('App: Error fetching user profile:', error);
       setCurrentPlayer(null);
     }
-  }, []);
+  }, [auth.currentUser]);
 
   useEffect(() => {
     if (session?.uid) {
@@ -121,7 +133,6 @@ const MahjongApp = () => {
   }, [session, fetchUserProfile]);
 
 
-  // 3. Socket.IO Connection and Global Listeners Effect
   useEffect(() => {
     const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5002';
 
@@ -184,8 +195,6 @@ const MahjongApp = () => {
   }, [session, socket, currentPlayer]);
 
 
-  // --- AUTHENTICATION FUNCTIONS (Firebase Auth) ---
-
   const handleLogin = async (email, password) => {
     setLoadingUser(true);
     try {
@@ -243,8 +252,6 @@ const MahjongApp = () => {
   };
 
 
-  // --- GAME ROOM FUNCTIONS ---
-
   const generateRoomCode = () => {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
   };
@@ -297,8 +304,6 @@ const MahjongApp = () => {
     setCurrentRoom(null);
     setCurrentView('home');
   };
-
-  // --- GAMEPLAY FUNCTIONS (Client-side, triggering backend emits) ---
 
   const simulateGameRound = () => {
     if (currentRoom && socket && currentRoom.game_state === 'waiting' && currentRoom.players_in_rooms.length === 4) {
@@ -419,7 +424,7 @@ const MahjongApp = () => {
 
   if (loadingUser) {
     return (
-      <div style={appStyles.container}> {/* Use appStyles.container */}
+      <div style={appStyles.container}>
         <div style={appStyles.centerContent}>
             <h1>Loading User...</h1>
         </div>
@@ -429,10 +434,10 @@ const MahjongApp = () => {
 
   if (!session) {
     return (
-      <div style={appStyles.container}> {/* Use appStyles.container */}
+      <div style={appStyles.container}>
         <div style={appStyles.centerContent}>
             <AuthForm onLogin={handleLogin} onSignup={handleSignup} />
-            <button style={appStyles.btn} onClick={() => setCurrentView('leaderboard')}> {/* Use appStyles.btn */}
+            <button style={appStyles.btn} onClick={() => setCurrentView('leaderboard')}>
               View Leaderboard
             </button>
         </div>
@@ -441,8 +446,8 @@ const MahjongApp = () => {
   }
 
   return (
-    <div style={appStyles.container}> {/* Main container */}
-      <div style={appStyles.header}> {/* Header */}
+    <div style={appStyles.container}>
+      <div style={appStyles.header}>
           <div style={appStyles.logo}>
               <div style={appStyles.logoTiles}>
                   <div style={appStyles.miniTile}>東</div>
@@ -451,23 +456,15 @@ const MahjongApp = () => {
               </div>
               <div style={appStyles.logoText}>Tai-ny Mahjong</div>
           </div>
-          {/* No right-side content in header from provided HTML, so removed */}
       </div>
 
-      <div style={appStyles.taskbar}> {/* Navigation Taskbar */}
+      <div style={appStyles.taskbar}>
           <a
               href="#"
               style={{ ...appStyles.taskbarItem, ...(currentView === 'home' ? appStyles.taskbarItemActive : {}) }}
               onClick={() => setCurrentView('home')}
           >
               Home
-          </a>
-          <a
-              href="#"
-              style={{ ...appStyles.taskbarItem, ...(currentView === 'hu' ? appStyles.taskbarItemActive : {}) }}
-              onClick={() => setCurrentView('hu')}
-          >
-              Hu (Win)
           </a>
           <a
               href="#"
@@ -482,6 +479,13 @@ const MahjongApp = () => {
               onClick={() => setCurrentView('profile')}
           >
               Profile
+          </a>
+          <a
+              href="#"
+              style={{ ...appStyles.taskbarItem, ...(currentView === 'settings' ? appStyles.taskbarItemActive : {}) }}
+              onClick={() => setCurrentView('settings')}
+          >
+              Settings
           </a>
           {currentRoom && (
               <a
@@ -501,7 +505,6 @@ const MahjongApp = () => {
           </a>
       </div>
 
-      {/* Screen rendering based on currentView */}
       {currentView === 'home' && (
         <div style={{ ...appStyles.screen, ...(currentView === 'home' ? appStyles.screenActive : {}) }}>
             <HomeView
@@ -511,12 +514,6 @@ const MahjongApp = () => {
               isPlayerLoaded={!!currentPlayer}
             />
         </div>
-      )}
-
-      {currentView === 'hu' && (
-          <div style={{ ...appStyles.screen, ...(currentView === 'hu' ? appStyles.screenActive : {}) }}>
-              <HuView onShowTileModal={() => setShowTileModal(true)} /> {/* Pass onShowTileModal */}
-          </div>
       )}
 
       {currentView === 'room' && currentRoom && (
@@ -551,7 +548,13 @@ const MahjongApp = () => {
           </div>
       )}
 
-      {/* Modals */}
+      {currentView === 'settings' && (
+          <div style={{ ...appStyles.screen, ...(currentView === 'settings' ? appStyles.screenActive : {}) }}>
+              <SettingsView currentPlayer={currentPlayer} />
+          </div>
+      )}
+
+
       <CreateRoomModal
         show={showCreateModal}
         onClose={() => setShowCreateModal(false)}
@@ -568,7 +571,7 @@ const MahjongApp = () => {
           show={showTileModal}
           onClose={() => setShowTileModal(false)}
           onSelectTile={(tile) => {
-            addTile(tile, selectedTileType); // Assuming modal is for adding
+            addTile(tile, selectedTileType);
             setShowTileModal(false);
           }}
           tiles={

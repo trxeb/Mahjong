@@ -1,6 +1,7 @@
 // src/components/Views/RoomView.jsx
 import React, { useState, useEffect } from 'react';
 import appStyles from '../../styles/appStyles'; // Import the shared styles
+import HuView from './HuView'; // Import HuView to render it as a modal
 
 const RoomView = ({
     currentRoom,
@@ -19,7 +20,8 @@ const RoomView = ({
 }) => {
     const [showDiscardModal, setShowDiscardModal] = useState(false);
     const [selectedTileToDiscard, setSelectedTileToDiscard] = useState(null);
-    const [showDeclareModal, setShowDeclareModal] = useState(false); // Not implemented yet
+    const [showDeclareModal, setShowDeclareModal] = useState(false); // For Pung/Kong/Chow (if needed as separate modal)
+    const [showHuModal, setShowHuModal] = useState(false); // New state for Hu (Win) modal
 
     // --- Socket Listeners (as per previous discussion) ---
     useEffect(() => {
@@ -32,12 +34,10 @@ const RoomView = ({
 
         socket.on('playerHandUpdated', ({ userId, newHand, newFlowers, newKongs }) => {
             console.log(`Player ${userId} hand updated.`);
-            // This listener is mostly for logging or visual feedback.
-            // The actual hand state is updated in App.js via roomStateUpdate.
         });
 
         socket.on('turnChanged', ({ nextTurnUserId, roomId }) => {
-            if (roomId === currentRoom.id) { // Use currentRoom.id here
+            if (roomId === currentRoom.id) {
                 const nextPlayer = currentRoom.players_in_rooms.find(p => p.user_id === nextTurnUserId);
                 console.log(`It's ${nextPlayer ? nextPlayer.username : 'Unknown Player'}'s turn.`);
                 if (nextTurnUserId === currentPlayer.id) {
@@ -47,20 +47,20 @@ const RoomView = ({
         });
 
         socket.on('tileDiscarded', ({ userId, discardedTile, roomId, newDiscardPile }) => {
-            if (roomId === currentRoom.id) { // Use currentRoom.id here
+            if (roomId === currentRoom.id) {
                 const discardingPlayer = currentRoom.players_in_rooms.find(p => p.user_id === userId);
                 console.log(`${discardingPlayer ? discardingPlayer.username : 'Unknown Player'} discarded ${discardedTile}.`);
             }
         });
 
         socket.on('gameStarted', ({ roomId, initialRoomState }) => {
-            if (roomId === currentRoom.id) { // Use currentRoom.id here
+            if (roomId === currentRoom.id) {
                 console.log("The game has started!");
             }
         });
 
         socket.on('playerDeclaredSet', ({ userId, type, tiles, roomId }) => {
-            if (roomId === currentRoom.id) { // Use currentRoom.id here
+            if (roomId === currentRoom.id) {
                 const declaringPlayer = currentRoom.players_in_rooms.find(p => p.user_id === userId);
                 console.log(`${declaringPlayer ? declaringPlayer.username : 'Unknown Player'} declared ${type} with ${tiles.join(', ')}!`);
             }
@@ -103,7 +103,7 @@ const RoomView = ({
         onRemoveTile(selectedTileToDiscard, 'regular');
 
         socket.emit('discardTile', {
-            roomId: currentRoom.id, // Use currentRoom.id
+            roomId: currentRoom.id,
             userId: currentPlayer.id,
             discardedTile: selectedTileToDiscard,
             updatedHand: newHandAfterDiscard,
@@ -212,6 +212,8 @@ const RoomView = ({
                     <button style={appStyles.btn} onClick={() => setShowDiscardModal(true)}>Discard Tile</button>
                     <button style={appStyles.btn} onClick={onCalculateHandScore}>Calculate Score</button>
                     <button style={appStyles.btn} onClick={onClearAll}>Clear All Tiles</button>
+                    {/* NEW: Win button to open Hu modal */}
+                    <button style={appStyles.btn} onClick={() => setShowHuModal(true)}>Declare Win (Hu)</button>
                     <button style={{ ...appStyles.btn, ...appStyles.btnSecondary }} onClick={onLeaveRoom}>
                         Leave Room
                     </button>
@@ -252,6 +254,21 @@ const RoomView = ({
                         </div>
                     </div>
                 )}
+
+                {/* NEW: Hu (Win) Declaration Modal */}
+                {showHuModal && (
+                    <div style={{ ...appStyles.modal, ...appStyles.modalActive }}>
+                        <div style={appStyles.modalContent}>
+                            {/* HuView props: onClose to close the modal */}
+                            <HuView
+                                onClose={() => setShowHuModal(false)}
+                                onShowTileModal={onAddTileClick} // Re-using onAddTileClick to open tile modal if needed from HuView
+                                // You might pass currentRoom, currentPlayer, socket etc. if HuView needs to send win data
+                            />
+                        </div>
+                    </div>
+                )}
+
             </div>
         </div>
     );
