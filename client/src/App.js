@@ -101,7 +101,7 @@ export default function App() {
                 <div className="text-center mb-4">
                     {/* Your combined logo image */}
                     <img
-                        src="/logo.jpg" // Assuming logo.jpg is in client/public folder
+                        src="/logo_white.jpg" // Assuming logo.jpg is in client/public folder
                         alt="Tai-ny Calculator Logo"
                         className="img-fluid mb-3"
                         style={{ maxWidth: '200px', height: 'auto', borderRadius: '15px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}
