@@ -8,7 +8,7 @@ import { auth } from '../firebase-config'; // Import your Firebase auth instance
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 
 // This line is crucial for exporting the component as default
-export default function Login() {
+export default function Login({ onNavigate }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
@@ -156,6 +156,17 @@ export default function Login() {
                         >
                         Forgot Password
                         </button>
+                </div>
+
+                <div className="text-center mt-3">
+                    <Button
+                        type="button"
+                        onClick={() => onNavigate('signup')} // Call onNavigate with 'signup'
+                        className="btn btn-link text-custom-dark text-decoration-none fw-normal p-0"
+                        style={{ fontSize: '0.875rem' }}
+                    >
+                        Don't have an account? Sign Up
+                    </Button>
                 </div>
             </Card>
         </Container>
