@@ -104,7 +104,7 @@ export default function Login() {
                         src="/logo_white.jpg" // Assuming logo.jpg is in client/public folder
                         alt="Tai-ny Calculator Logo"
                         className="img-fluid mb-3"
-                        style={{ maxWidth: '200px', height: 'auto', borderRadius: '15px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}
+                        style={{ maxWidth: '250px', height: 'auto', borderRadius: '15px'}} // boxShadow: '0 4px 8px rgba(0,0,0,0.1)' 
                         onError={(e) => { e.target.onerror = null; e.target.src = '[https://placehold.co/200x200/f5ebd8/1b1b1b?text=Tai-ny+Logo](https://placehold.co/200x200/f5ebd8/1b1b1b?text=Tai-ny+Logo)'; }} // Fallback if image not found
                     />
                     {/* The text "Tai-ny Calculator" is now part of the logo image */}
