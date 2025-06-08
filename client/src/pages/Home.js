@@ -6,7 +6,7 @@ import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore'; // Import Firestore functions
 
 export default function Home({ onNavigate }) {
-    const [userDisplayName, setUserDisplayName] = useState('Guest'); // Default display name
+    const [userEmail, setUserEmail] = useState('Guest'); 
     const [customUserId, setCustomUserId] = useState(''); // State for custom user ID
 
     // Listen for auth state changes and fetch user data from Firestore
@@ -19,16 +19,16 @@ export default function Home({ onNavigate }) {
 
                 if (userDocSnap.exists()) {
                     const userData = userDocSnap.data();
-                    setUserDisplayName(user.email || 'User'); // Fallback to email
+                    setUserEmail(user.email || 'User'); 
                     setCustomUserId(userData.customUserId || '');
                 } else {
-                    // User exists in Auth but not in Firestore 'users' collection (e.g., old user or created without custom ID)
-                    setUserDisplayName(user.email || 'User');
+                    // User exists in Auth but not in Firestore 'users' collection
+                    setUserEmail(user.email || 'User');
                     setCustomUserId('');
                 }
             } else {
                 // User logged out
-                setUserDisplayName('Guest');
+                setUserEmail('Guest'); // Reset userEmail to 'Guest'
                 setCustomUserId('');
                 onNavigate('login'); // Redirect to login if logged out
             }
@@ -36,23 +36,26 @@ export default function Home({ onNavigate }) {
 
         // Clean up subscription on component unmount
         return () => unsubscribe();
-    }, [onNavigate]); // Re-run effect if onNavigate dependency changes
+    }, [onNavigate]); 
 
     const handleLogout = async () => {
         try {
             await signOut(auth);
-            // onAuthStateChanged listener will handle navigation to login
             console.log('User logged out successfully');
         } catch (error) {
             console.error('Error logging out:', error);
         }
     };
 
+    // Determine the name to display for the greeting
+    const greetingName = customUserId || userEmail || 'there';
+
     return (
         <Container fluid className="d-flex justify-content-center align-items-center min-vh-100 p-3">
             <div className="text-center p-4 p-md-5 bg-white rounded-4 shadow-lg-custom" style={{ maxWidth: '600px', width: '100%' }}>
                 <h1 className="display-4 fw-bolder text-custom-dark mb-3">Welcome!</h1>
-                {userDisplayName && <p className="lead text-muted">Hello, {userDisplayName}!</p>}
+                {/* Display the greeting using customUserId or userEmail as fallback */}
+                <p className="lead text-muted">Hello, {greetingName}!</p>
                 {customUserId && <p className="lead text-muted">Your custom ID: **{customUserId}**</p>}
                 
                 <p className="mt-4">This is your home page. You are successfully logged in.</p>
