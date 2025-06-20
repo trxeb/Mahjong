@@ -12,8 +12,8 @@ import ProfilePage from './pages/ProfilePage';
 import RecordsPage from './pages/RecordsPage';     
 import ScorePage from './pages/ScorePage';         
 
-// Import the BottomNavBar component (using the updated casing)
-import BottomNavBar from './components/BottomNavBar'; 
+// Import the SideBar component
+import SideBar from './components/SideBar'; // Correctly import SideBar
 
 export default function App() {
     // State to manage which page is currently displayed: 'login', 'signup', or 'home', etc.
@@ -57,7 +57,7 @@ export default function App() {
 
     // Determine which component to render based on the 'currentPage' state
     let content;
-    const showNavbar = user; // Show navbar only if a user is logged in
+    const showSidebar = user; // Show sidebar only if a user is logged in
 
     switch (currentPage) {
         case 'login':
@@ -86,15 +86,18 @@ export default function App() {
     }
 
     return (
-        <div className="App d-flex flex-column min-vh-100">
-            {/* Main content area. Flex-grow-1 ensures it takes all available space, pushing navbar to bottom */}
-            <div className="flex-grow-1"> 
+        // Main application container using flexbox for sidebar layout
+        <div className="d-flex" style={{ minHeight: '100vh' }}>
+            {/* SideBar, shown only when logged in */}
+            {showSidebar && (
+                <SideBar onNavigate={handleNavigate} currentPage={currentPage} /> 
+            )}
+
+            {/* Main content area. */}
+            {/* This margin pushes content to the right when sidebar is visible. */}
+            <div className="flex-grow-1" style={{ marginLeft: showSidebar ? '200px' : '0' }}> 
                 {content} {/* This will render the currently selected page component */}
             </div>
-            {/* Bottom Navigation Bar, shown only when a user is logged in */}
-            {showNavbar && (
-                <BottomNavBar onNavigate={handleNavigate} currentPage={currentPage} /> 
-            )}
         </div>
     );
 }
