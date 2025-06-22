@@ -1,0 +1,20 @@
+{
+  "name": "mahjong-app",
+  "version": "1.0.0",
+  "description": "Mahjong game application with React frontend and Node.js backend",
+  "main": "index.js",
+  "scripts": {
+    "client": "cd client && npm start",
+    "server": "cd server && npm start",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "install-all": "npm install && cd client && npm install && cd ../server && npm install"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.6",
+    "firebase": "^11.8.1",
+    "concurrently": "^8.2.2"
+  },
+  "keywords": ["mahjong", "react", "nodejs", "firebase"],
+  "author": "",
+  "license": "ISC"
+}
