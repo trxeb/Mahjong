@@ -1,7 +1,7 @@
 // client/src/App.js
 import React, { useState, useEffect } from 'react';
-import { auth } from './firebase-config'; // Import auth
-import { onAuthStateChanged } from 'firebase/auth'; // Import onAuthStateChanged
+import { auth } from './firebase-config';
+import { onAuthStateChanged } from 'firebase/auth';
 
 // Import all your page components from the 'pages' folder
 import Login from './pages/Login';
@@ -11,51 +11,38 @@ import GameMasterPage from './pages/GameMasterPage';
 import ProfilePage from './pages/ProfilePage';     
 import RecordsPage from './pages/RecordsPage';     
 import ScorePage from './pages/ScorePage';         
+import SettingsPage from './pages/SettingsPage';   // NEW: Import SettingsPage
 
 // Import the SideBar component
-import SideBar from './components/SideBar'; // Correctly import SideBar
+import SideBar from './components/SideBar'; 
 
 export default function App() {
-    // State to manage which page is currently displayed: 'login', 'signup', or 'home', etc.
     const [currentPage, setCurrentPage] = useState('login'); 
-    // State to hold the Firebase authenticated user object (null if logged out)
     const [user, setUser] = useState(null); 
-    // State to pass room ID to GM page if applicable
     const [currentRoomId, setCurrentRoomId] = useState(null); 
 
     useEffect(() => {
-        // Set up an authentication state listener provided by Firebase
-        // This listener fires whenever the user's sign-in state changes (login, logout)
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             if (currentUser) {
-                // If a user is logged in (currentUser is not null)
-                setUser(currentUser); // Store the user object in state
-                // Only navigate to home if we're not already on a specific page that requires login (like GM page)
+                setUser(currentUser);
                 if (currentPage === 'login' || currentPage === 'signup') { 
                     setCurrentPage('home'); 
                 }
             } else {
-                // If no user is logged in (currentUser is null)
-                setUser(null); // Clear the user object from state
-                // If user logs out or is not logged in, go to login unless they are trying to sign up
+                setUser(null);
                 if (currentPage !== 'signup') {
                     setCurrentPage('login'); 
                 }
             }
         });
-
-        // Cleanup function: unsubscribe from the auth listener when the component unmounts
         return () => unsubscribe();
-    }, [currentPage]); // Dependency array: Effect re-runs if 'currentPage' changes.
-                      // This helps in scenarios like immediate redirection after signup/login/logout.
+    }, [currentPage]); 
 
-    // Function passed to child components (Login, SignUp, Home, etc.) to allow navigation
     const handleNavigate = (page, id = null) => {
         setCurrentPage(page);
-        setCurrentRoomId(id); // Store the room ID if navigating to GM page (or other ID-specific pages)
+        setCurrentRoomId(id); 
     };
 
-    // Determine which component to render based on the 'currentPage' state
     let content;
     const showSidebar = user; // Show sidebar only if a user is logged in
 
@@ -81,22 +68,20 @@ export default function App() {
         case 'score': 
             content = <ScorePage onNavigate={handleNavigate} />;
             break;
+        case 'settings': // NEW: Route to SettingsPage
+            content = <SettingsPage onNavigate={handleNavigate} roomId={currentRoomId} />;
+            break;
         default:
-            content = <Login onNavigate={handleNavigate} />; // Default to login if page is unrecognized
+            content = <Login onNavigate={handleNavigate} />; 
     }
 
     return (
-        // Main application container using flexbox for sidebar layout
         <div className="d-flex" style={{ minHeight: '100vh' }}>
-            {/* SideBar, shown only when logged in */}
             {showSidebar && (
                 <SideBar onNavigate={handleNavigate} currentPage={currentPage} /> 
             )}
-
-            {/* Main content area. */}
-            {/* This margin pushes content to the right when sidebar is visible. */}
             <div className="flex-grow-1" style={{ marginLeft: showSidebar ? '200px' : '0' }}> 
-                {content} {/* This will render the currently selected page component */}
+                {content} 
             </div>
         </div>
     );

@@ -1,9 +1,9 @@
 // client/src/pages/Home.js
 import React, { useState, useEffect } from 'react';
-import { Container, Button, Input, Form, FormGroup, Label, Row, Col, Alert } from 'reactstrap'; // Added Alert
+import { Container, Button, Input, Form, FormGroup, Label, Row, Col, Alert } from 'reactstrap';
 import { auth, db } from '../firebase-config';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, collection, addDoc, query, where, getDocs, setDoc } from 'firebase/firestore'; // Added setDoc
+import { doc, getDoc, collection, addDoc, query, where, getDocs, setDoc } from 'firebase/firestore';
 
 export default function Home({ onNavigate }) {
     const [userEmail, setUserEmail] = useState('Guest');
@@ -34,7 +34,6 @@ export default function Home({ onNavigate }) {
                 } else {
                     setUserEmail(user.email || 'User');
                     setCustomUserId('');
-                    // Prompt user to set a custom ID if not found
                     showMessage("Your custom User ID is not set. Please set it on your profile page.", "info");
                 }
             } else {
@@ -62,17 +61,21 @@ export default function Home({ onNavigate }) {
         }
         if (!customUserId) {
             showMessage("Your custom User ID is not set. Please set it on your profile page first.", "danger");
-            onNavigate('profile'); // Redirect to profile page
+            onNavigate('profile');
             return;
         }
 
         try {
             const newRoomRef = await addDoc(collection(db, "gameRooms"), {
                 gameMasterUid: auth.currentUser.uid,
-                gameMasterCustomId: customUserId, // Store GM's custom ID
+                gameMasterCustomId: customUserId,
                 status: "waiting", // e.g., "waiting", "in-game", "finished"
                 players: [{ uid: auth.currentUser.uid, customId: customUserId, email: auth.currentUser.email }], // GM is automatically a player
                 createdAt: new Date(),
+                settings: { // Default settings
+                    maxPlayers: 4, // GM + 3 players
+                    gameType: "standard",
+                }
             });
             showMessage(`Room created with ID: ${newRoomRef.id}`, "success");
             onNavigate('gmPage', newRoomRef.id); // Navigate to GM page with room ID
@@ -98,12 +101,11 @@ export default function Home({ onNavigate }) {
         }
         if (!customUserId) {
             showMessage("Your custom User ID is not set. Please set it on your profile page first.", "danger");
-            onNavigate('profile'); // Redirect to profile page
+            onNavigate('profile');
             return;
         }
 
         try {
-            // Check if the room exists
             const roomDocRef = doc(db, "gameRooms", trimmedRoomId);
             const roomDocSnap = await getDoc(roomDocRef);
 
@@ -115,11 +117,17 @@ export default function Home({ onNavigate }) {
             const roomData = roomDocSnap.data();
             const roomId = roomDocSnap.id;
 
+            // Check if the room is already full (GM + 3 players = 4 total)
+            if (roomData.players.length >= roomData.settings.maxPlayers) {
+                showMessage(`Room '${roomId}' is full. Maximum ${roomData.settings.maxPlayers - 1} players allowed (excluding GM).`, "danger");
+                return;
+            }
+
             // Check if user is already in the room
             const isAlreadyInRoom = roomData.players.some(player => player.uid === auth.currentUser.uid);
             if (isAlreadyInRoom) {
                 showMessage(`You are already in room '${roomId}'.`, "warning");
-                // If user is already the GM, navigate to GM page
+                // If GM, redirect to GM page, otherwise stay for now (or navigate to a player lobby)
                 if (roomData.gameMasterUid === auth.currentUser.uid) {
                     onNavigate('gmPage', roomId);
                 } else {
@@ -150,17 +158,16 @@ export default function Home({ onNavigate }) {
         }
     };
 
-    // Determine the name to display for the greeting
     const greetingName = customUserId || userEmail || 'there';
 
     return (
         <Container fluid className="d-flex justify-content-center align-items-center min-vh-100 p-3">
             <div className="text-center p-4 p-md-5 bg-white rounded-4 shadow-lg-custom" style={{ maxWidth: '600px', width: '100%' }}>
-                <h1 className="display-4 fw-bolder text-custom-dark mb-3">Welcome {greetingName} to Tai-ny Calculator</h1>
-                {/* <p className="lead text-muted">Hello, {greetingName}!</p>
+                <h1 className="display-4 fw-bolder text-custom-dark mb-3">Welcome!</h1>
+                <p className="lead text-muted">Hello, {greetingName}!</p>
                 {customUserId && <p className="lead text-muted">Your custom ID: **{customUserId}**</p>}
                 
-                <p className="mt-4">This is your home page.</p> */}
+                <p className="mt-4">This is your home page.</p>
                 
                 {message && (
                     <Alert color={messageType} className="text-center rounded-pill-sm py-2 mt-3">
@@ -192,10 +199,6 @@ export default function Home({ onNavigate }) {
                         </Form>
                     </Col>
                 </Row>
-                {/* Logout button is now handled by the SideBar for consistency across pages */}
-                {/* <Button color="danger" onClick={handleLogout} className="mt-5 rounded-pill px-4">
-                    <i className="fas fa-sign-out-alt me-2"></i> Logout
-                </Button> */}
             </div>
         </Container>
     );
