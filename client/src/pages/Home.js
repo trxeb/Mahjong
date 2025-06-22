@@ -1,42 +1,50 @@
 // client/src/pages/Home.js
 import React, { useState, useEffect } from 'react';
-import { Container, Button } from 'reactstrap';
-import { auth, db } from '../firebase-config'; // Import auth and db
+import { Container, Button, Input, Form, FormGroup, Label, Row, Col, Alert } from 'reactstrap'; // Added Alert
+import { auth, db } from '../firebase-config';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore'; // Import Firestore functions
+import { doc, getDoc, collection, addDoc, query, where, getDocs, setDoc } from 'firebase/firestore'; // Added setDoc
 
 export default function Home({ onNavigate }) {
-    const [userEmail, setUserEmail] = useState('Guest'); 
-    const [customUserId, setCustomUserId] = useState(''); // State for custom user ID
+    const [userEmail, setUserEmail] = useState('Guest');
+    const [customUserId, setCustomUserId] = useState('');
+    const [joinRoomId, setJoinRoomId] = useState(''); // State for joining room
+    const [message, setMessage] = useState('');
+    const [messageType, setMessageType] = useState('');
 
-    // Listen for auth state changes and fetch user data from Firestore
+    const showMessage = (msg, type) => {
+        setMessage(msg);
+        setMessageType(type);
+        setTimeout(() => {
+            setMessage('');
+            setMessageType('');
+        }, 5000);
+    };
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // If user is logged in, try to fetch their data from Firestore
                 const userDocRef = doc(db, "users", user.uid);
                 const userDocSnap = await getDoc(userDocRef);
 
                 if (userDocSnap.exists()) {
                     const userData = userDocSnap.data();
-                    setUserEmail(user.email || 'User'); 
+                    setUserEmail(user.email || 'User');
                     setCustomUserId(userData.customUserId || '');
                 } else {
-                    // User exists in Auth but not in Firestore 'users' collection
                     setUserEmail(user.email || 'User');
                     setCustomUserId('');
+                    // Prompt user to set a custom ID if not found
+                    showMessage("Your custom User ID is not set. Please set it on your profile page.", "info");
                 }
             } else {
-                // User logged out
-                setUserEmail('Guest'); // Reset userEmail to 'Guest'
+                setUserEmail('Guest');
                 setCustomUserId('');
-                onNavigate('login'); // Redirect to login if logged out
+                onNavigate('login');
             }
         });
-
-        // Clean up subscription on component unmount
         return () => unsubscribe();
-    }, [onNavigate]); 
+    }, [onNavigate]);
 
     const handleLogout = async () => {
         try {
@@ -47,22 +55,147 @@ export default function Home({ onNavigate }) {
         }
     };
 
+    const handleCreateRoom = async () => {
+        if (!auth.currentUser) {
+            showMessage("You must be logged in to create a room.", "danger");
+            return;
+        }
+        if (!customUserId) {
+            showMessage("Your custom User ID is not set. Please set it on your profile page first.", "danger");
+            onNavigate('profile'); // Redirect to profile page
+            return;
+        }
+
+        try {
+            const newRoomRef = await addDoc(collection(db, "gameRooms"), {
+                gameMasterUid: auth.currentUser.uid,
+                gameMasterCustomId: customUserId, // Store GM's custom ID
+                status: "waiting", // e.g., "waiting", "in-game", "finished"
+                players: [{ uid: auth.currentUser.uid, customId: customUserId, email: auth.currentUser.email }], // GM is automatically a player
+                createdAt: new Date(),
+            });
+            showMessage(`Room created with ID: ${newRoomRef.id}`, "success");
+            onNavigate('gmPage', newRoomRef.id); // Navigate to GM page with room ID
+        } catch (error) {
+            console.error("Error creating room:", error);
+            showMessage(`Failed to create room: ${error.message}`, "danger");
+        }
+    };
+
+    const handleJoinRoom = async (e) => {
+        e.preventDefault();
+        setMessage('');
+        setMessageType('');
+
+        if (!auth.currentUser) {
+            showMessage("You must be logged in to join a room.", "danger");
+            return;
+        }
+        const trimmedRoomId = joinRoomId.trim();
+        if (!trimmedRoomId) {
+            showMessage("Please enter a Room ID to join.", "danger");
+            return;
+        }
+        if (!customUserId) {
+            showMessage("Your custom User ID is not set. Please set it on your profile page first.", "danger");
+            onNavigate('profile'); // Redirect to profile page
+            return;
+        }
+
+        try {
+            // Check if the room exists
+            const roomDocRef = doc(db, "gameRooms", trimmedRoomId);
+            const roomDocSnap = await getDoc(roomDocRef);
+
+            if (!roomDocSnap.exists()) {
+                showMessage(`Room with ID '${trimmedRoomId}' not found.`, "danger");
+                return;
+            }
+
+            const roomData = roomDocSnap.data();
+            const roomId = roomDocSnap.id;
+
+            // Check if user is already in the room
+            const isAlreadyInRoom = roomData.players.some(player => player.uid === auth.currentUser.uid);
+            if (isAlreadyInRoom) {
+                showMessage(`You are already in room '${roomId}'.`, "warning");
+                // If user is already the GM, navigate to GM page
+                if (roomData.gameMasterUid === auth.currentUser.uid) {
+                    onNavigate('gmPage', roomId);
+                } else {
+                    // For players already in, you might have a generic player game page
+                    showMessage(`Navigating you to room '${roomId}'.`, "success");
+                    // onNavigate('playerGamePage', roomId); // Placeholder for future page
+                }
+                return;
+            }
+            
+            // Add user to the room's players array
+            const updatedPlayers = [...roomData.players, { uid: auth.currentUser.uid, customId: customUserId, email: auth.currentUser.email }];
+            await setDoc(doc(db, "gameRooms", roomId), { players: updatedPlayers }, { merge: true });
+
+            showMessage(`Successfully joined room '${roomId}'!`, "success");
+            // Navigate based on whether user is GM or a regular player
+            if (roomData.gameMasterUid === auth.currentUser.uid) {
+                onNavigate('gmPage', roomId);
+            } else {
+                // For non-GMs joining, you might need a different page for players
+                showMessage(`Joined room ${roomId}. Waiting for Game Master to start.`, "success");
+                // onNavigate('playerGamePage', roomId); // Placeholder for future page
+            }
+
+        } catch (error) {
+            console.error("Error joining room:", error);
+            showMessage(`Failed to join room: ${error.message}`, "danger");
+        }
+    };
+
     // Determine the name to display for the greeting
     const greetingName = customUserId || userEmail || 'there';
 
     return (
         <Container fluid className="d-flex justify-content-center align-items-center min-vh-100 p-3">
             <div className="text-center p-4 p-md-5 bg-white rounded-4 shadow-lg-custom" style={{ maxWidth: '600px', width: '100%' }}>
-                <h1 className="display-4 fw-bolder text-custom-dark mb-3">Welcome!</h1>
-                {/* Display the greeting using customUserId or userEmail as fallback */}
-                <p className="lead text-muted">Hello, {greetingName}!</p>
+                <h1 className="display-4 fw-bolder text-custom-dark mb-3">Welcome {greetingName} to Tai-ny Calculator</h1>
+                {/* <p className="lead text-muted">Hello, {greetingName}!</p>
                 {customUserId && <p className="lead text-muted">Your custom ID: **{customUserId}**</p>}
                 
-                <p className="mt-4">This is your home page. You are successfully logged in.</p>
+                <p className="mt-4">This is your home page.</p> */}
                 
-                <Button color="danger" onClick={handleLogout} className="mt-4 rounded-pill">
-                    Logout
-                </Button>
+                {message && (
+                    <Alert color={messageType} className="text-center rounded-pill-sm py-2 mt-3">
+                        {message}
+                    </Alert>
+                )}
+
+                <h4 className="text-custom-dark mt-5 mb-3">Game Room Actions</h4>
+                <Row className="g-3">
+                    <Col xs="12">
+                        <Button color="success" onClick={handleCreateRoom} className="w-100 rounded-pill py-3">
+                            <i className="fas fa-plus-circle me-2"></i> Create New Room (GM)
+                        </Button>
+                    </Col>
+                    <Col xs="12">
+                        <Form onSubmit={handleJoinRoom} className="d-flex flex-column flex-md-row gap-2">
+                            <FormGroup className="flex-grow-1 mb-0">
+                                <Input
+                                    type="text"
+                                    placeholder="Enter Room ID"
+                                    value={joinRoomId}
+                                    onChange={(e) => setJoinRoomId(e.target.value)}
+                                    className="rounded-pill"
+                                />
+                            </FormGroup>
+                            <Button type="submit" color="primary" className="rounded-pill px-4">
+                                <i className="fas fa-door-open me-2"></i> Join Room
+                            </Button>
+                        </Form>
+                    </Col>
+                </Row>
+                {/* Logout button is now handled by the SideBar for consistency across pages */}
+                {/* <Button color="danger" onClick={handleLogout} className="mt-5 rounded-pill px-4">
+                    <i className="fas fa-sign-out-alt me-2"></i> Logout
+                </Button> */}
             </div>
         </Container>
     );
