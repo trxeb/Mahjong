@@ -50,6 +50,7 @@ const Home = () => {
             wind: '', // Player will choose wind on the next screen
             flowerTiles: [],
         }],
+        playerUIDs: [user.uid],
         createdAt: new Date(),
         gameMaster: user.uid,
         status: 'lobby',

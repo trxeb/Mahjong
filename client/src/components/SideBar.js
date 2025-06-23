@@ -9,7 +9,8 @@ import {
   faChessKing,
   faClipboardList,
   faTrophy,
-  faSignOutAlt
+  faSignOutAlt,
+  faCog
 } from '@fortawesome/free-solid-svg-icons';
 import { auth } from '../firebase-config';
 import { signOut } from 'firebase/auth';
@@ -28,6 +29,7 @@ const SideBar = () => {
   const navItems = [
     { to: '/', label: 'Home', icon: faHome, exact: true },
     { to: '/profile', label: 'Profile', icon: faUserCircle },
+    { to: '/settings', label: 'Settings', icon: faCog },
     { to: lastRoomCode ? `/gamemaster/${lastRoomCode}` : '#', label: 'GM Page', icon: faChessKing, disabled: !lastRoomCode },
     { to: lastRoomCode ? `/records/${lastRoomCode}` : '#', label: 'Records', icon: faClipboardList, disabled: !lastRoomCode },
     { to: lastRoomCode ? `/score/${lastRoomCode}`: '#', label: 'Score', icon: faTrophy, disabled: !lastRoomCode }
@@ -44,7 +46,7 @@ const SideBar = () => {
       className="sidebar"
       style={{
         width: '200px',
-        backgroundColor: '#6d7a71',
+        backgroundColor: '#4A5C52',
         color: '#f0f0f0',
         minHeight: '100vh',
         paddingTop: '20px',
@@ -87,7 +89,7 @@ const SideBar = () => {
           color="danger"
           onClick={handleLogout}
           className="w-100 rounded-pill"
-          style={{ backgroundColor: '#802017', borderColor: '#802017' }}
+          style={{ backgroundColor: '#A94442', borderColor: '#A94442' }}
         >
           <FontAwesomeIcon icon={faSignOutAlt} className="me-2" /> Logout
         </Button>

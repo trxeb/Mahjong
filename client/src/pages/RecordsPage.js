@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { doc, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase-config';
 import { useAuth } from '../hooks/useAuth';
 import FlowerModal from '../components/FlowerModal';
 import DeclareWinModal from '../components/DeclareWinModal';
-import { Container, Row, Col, Button, Card, CardBody, Input } from 'reactstrap';
+import { Container, Row, Col, Button, Card, CardBody, Input, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUndo, faClipboard, faFan, faCoins, faChartBar, faTrophy, faPlus, faHandshake } from '@fortawesome/free-solid-svg-icons';
+import { faUndo, faClipboard, faTrophy, faPlus, faHandshake } from '@fortawesome/free-solid-svg-icons';
 
 const seatValueMap = { 'East (東)': 1, 'South (南)': 2, 'West (西)': 3, 'North (北)': 4 };
 const windRotationMap = {
@@ -22,7 +22,6 @@ const RecordsPage = () => {
     const navigate = useNavigate();
     const { user: currentUser } = useAuth();
     const [players, setPlayers] = useState([]);
-    const [selectedFlowerPlayer, setSelectedFlowerPlayer] = useState('');
     const [selectedKongType, setSelectedKongType] = useState('Concealed Kong');
     const [selectedKongTarget, setSelectedKongTarget] = useState('');
     const [room, setRoom] = useState(null);
@@ -31,6 +30,8 @@ const RecordsPage = () => {
     const [mostWins, setMostWins] = useState(-1);
     const [modalOpen, setModalOpen] = useState(false);
     const [winModalOpen, setWinModalOpen] = useState(false);
+    const [winnerModalOpen, setWinnerModalOpen] = useState(false);
+    const [gameWinner, setGameWinner] = useState(null);
 
     useEffect(() => {
         if (!roomCode) return;
@@ -42,10 +43,18 @@ const RecordsPage = () => {
                 const roomData = docSnap.data();
                 setRoom(roomData);
 
-                // If the round is over, navigate all players back to the lobby
+                if (roomData.status === 'finished') {
+                    if (roomData.winner) {
+                        const winnerData = players.find(p => p.uid === roomData.winner.uid);
+                        setGameWinner(winnerData || roomData.winner);
+                    }
+                    setWinnerModalOpen(true);
+                    return;
+                }
+
                 if (roomData.status === 'lobby') {
                     navigate(`/gamemaster/${roomCode}`);
-                    return; // Stop processing to avoid errors on an unmounted component
+                    return;
                 }
 
                 const currentPlayers = roomData.players || [];
@@ -53,9 +62,6 @@ const RecordsPage = () => {
 
                 const otherPlayers = currentPlayers.filter(p => p.uid !== currentUser?.uid);
                 if (currentPlayers.length > 0) {
-                    if (!selectedFlowerPlayer && otherPlayers.length > 0) {
-                        setSelectedFlowerPlayer(otherPlayers[0].uid);
-                    }
                     if (!selectedKongTarget && otherPlayers.length > 0) {
                         setSelectedKongTarget(otherPlayers[0].uid);
                     }
@@ -73,120 +79,104 @@ const RecordsPage = () => {
         });
 
         return () => unsubscribe();
-    }, [roomCode, navigate, currentUser?.uid]);
+    }, [roomCode, navigate, currentUser?.uid, selectedKongTarget]);
 
-    const calculateFlowerBonuses = (actingPlayer, tile, currentPlayers) => {
-        let updatedPlayers = [...currentPlayers];
-        let bonusTai = 0;
-        let setBonus = false;
+    const calculateBonusChips = (tiles, playerWind) => {
+        if (!tiles || tiles.length === 0) {
+            return 0;
+        }
 
-        const playerIndex = updatedPlayers.findIndex(p => p.uid === actingPlayer.uid);
-        const player = updatedPlayers[playerIndex];
-        const playerTiles = [...player.flowerTiles, tile]; // Temporarily add new tile for calculation
+        let chips = 0;
+        const seatValue = seatValueMap[playerWind];
 
-        // Rule 1: Own Seat Flower
-        const seatValue = seatValueMap[player.wind];
-        const hasOwnSeason = playerTiles.some(t => t.group === 'SEASONS' && t.value === seatValue);
-        const hasOwnFlower = playerTiles.some(t => t.group === 'FLOWERS' && t.value === seatValue);
+        // Rule 1: Own Seat Flower (1 chip)
+        const hasOwnSeason = tiles.some(t => t.group === 'SEASONS' && t.value === seatValue);
+        const hasOwnFlower = tiles.some(t => t.group === 'FLOWERS' && t.value === seatValue);
         if (hasOwnSeason && hasOwnFlower) {
-            bonusTai += 1;
+            chips += 1;
         }
 
-        // Rule 2: Full Set
-        const seasonTiles = playerTiles.filter(t => t.group === 'SEASONS');
-        const flowerTiles = playerTiles.filter(t => t.group === 'FLOWERS');
-        if (seasonTiles.length === 4 || flowerTiles.length === 4) {
-            bonusTai += 2;
-            setBonus = true; // A full set bonus
+        // Rule 2: Full Set (2 chips)
+        const seasonTiles = tiles.filter(t => t.group === 'SEASONS');
+        const flowerTiles = tiles.filter(t => t.group === 'FLOWERS');
+        if (seasonTiles.length === 4) {
+            chips += 2;
+        }
+        if (flowerTiles.length === 4) {
+            chips += 2;
         }
 
-        // Rule 3: Animal Pair
-        const hasCat = playerTiles.some(t => t.id === 'a1');
-        const hasRat = playerTiles.some(t => t.id === 'a2');
-        const hasRooster = playerTiles.some(t => t.id === 'a3');
-        const hasCentipede = playerTiles.some(t => t.id === 'a4');
-        if ((hasCat && hasRat) || (hasRooster && hasCentipede)) {
-            bonusTai += 1;
+        // Rule 3: Animal Pairs (1 chip per pair)
+        const hasCat = tiles.some(t => t.id === 'a1');
+        const hasRat = tiles.some(t => t.id === 'a2');
+        const hasRooster = tiles.some(t => t.id === 'a3');
+        const hasCentipede = tiles.some(t => t.id === 'a4');
+        if (hasCat && hasRat) {
+            chips += 1;
         }
-        
-        // This is a simplified bonus calculation. A real game might have more complex rules.
-        // For now, we calculate total bonus and distribute
-        const existingBonus = player.flowerBonus || 0;
-        const newBonus = bonusTai - existingBonus;
-
-        if (newBonus > 0) {
-            const chips = setBonus ? 2 : 1; // 2 chips for a full set, 1 for others
-            const taiPerPlayer = chips;
-            
-            updatedPlayers[playerIndex].score += (chips * 3);
-            updatedPlayers[playerIndex].flowerBonus = bonusTai;
-
-            updatedPlayers.forEach((p, index) => {
-                if (index !== playerIndex) {
-                    updatedPlayers[index].score -= taiPerPlayer;
-                }
-            });
+        if (hasRooster && hasCentipede) {
+            chips += 1;
         }
-        
-        return updatedPlayers;
+
+        return chips;
     };
 
     const handleFlowerSelect = async (tile) => {
         setModalOpen(false);
         if (!currentUser || !room) return;
-
+    
         const roomRef = doc(db, 'rooms', roomCode);
-        let currentPlayers = [...room.players];
-        const playerIndex = currentPlayers.findIndex(p => p.uid === currentUser.uid);
-
+        let updatedPlayers = JSON.parse(JSON.stringify(room.players));
+        const playerIndex = updatedPlayers.findIndex(p => p.uid === currentUser.uid);
+    
         if (playerIndex === -1) {
             console.error("Current user not found in the room's players list.");
             return;
         }
+    
+        const actingPlayer = updatedPlayers[playerIndex];
         
-        const actingPlayer = { ...currentPlayers[playerIndex] };
+        // Calculate chips before adding the new tile
+        const chipsBefore = calculateBonusChips(actingPlayer.flowerTiles, actingPlayer.wind);
+        
+        // Add the new tile
         actingPlayer.flowerTiles = [...(actingPlayer.flowerTiles || []), tile];
         
-        // Calculate bonuses and update all players' scores
-        const updatedPlayersWithBonuses = calculateFlowerBonuses(actingPlayer, tile, currentPlayers);
-
+        // Calculate chips after adding the new tile
+        const chipsAfter = calculateBonusChips(actingPlayer.flowerTiles, actingPlayer.wind);
+        
+        const chipsToAward = chipsAfter - chipsBefore;
+    
+        if (chipsToAward > 0) {
+            const pointsPerChip = updatedPlayers.length - 1;
+            const totalGain = chipsToAward * pointsPerChip;
+    
+            // Award points to the acting player
+            actingPlayer.score += totalGain;
+    
+            // Deduct points from other players
+            updatedPlayers = updatedPlayers.map((p, index) => {
+                if (index !== playerIndex) {
+                    p.score -= chipsToAward;
+                }
+                return p;
+            });
+        }
+        
+        // Update the player in the array
+        updatedPlayers[playerIndex] = actingPlayer;
+    
         // Remove the selected tile from the available list
         const updatedAvailableTiles = room.availableFlowerTiles.filter(t => t.id !== tile.id);
-
+    
         await updateDoc(roomRef, {
-            players: updatedPlayersWithBonuses,
+            players: updatedPlayers,
             availableFlowerTiles: updatedAvailableTiles,
             history: arrayUnion({
                 type: 'flower_add',
                 actor: currentUser.uid,
                 tile: tile,
-                timestamp: new Date(),
-            })
-        });
-    };
-
-    const handleRecordFlower = async () => {
-        if (!currentUser || !selectedFlowerPlayer || currentUser.uid === selectedFlowerPlayer) {
-            console.log("Invalid flower action: Cannot select yourself.");
-            return;
-        }
-
-        const actorIndex = room.players.findIndex(p => p.uid === currentUser.uid);
-        const targetIndex = room.players.findIndex(p => p.uid === selectedFlowerPlayer);
-
-        if (actorIndex === -1 || targetIndex === -1) return;
-
-        const updatedPlayers = [...room.players];
-        updatedPlayers[actorIndex].score += 1;
-        updatedPlayers[targetIndex].score -= 1;
-
-        const roomRef = doc(db, 'rooms', roomCode);
-        await updateDoc(roomRef, {
-            players: updatedPlayers,
-            history: arrayUnion({
-                type: 'flower',
-                actor: currentUser.uid,
-                target: selectedFlowerPlayer,
+                chips_awarded: chipsToAward,
                 timestamp: new Date(),
             })
         });
@@ -404,6 +394,11 @@ const RecordsPage = () => {
         });
     };
 
+    const handleCloseWinnerModalAndRedirect = () => {
+        setWinnerModalOpen(false);
+        navigate('/');
+    };
+
     const toggleModal = () => setModalOpen(!modalOpen);
     const toggleWinModal = () => setWinModalOpen(!winModalOpen);
 
@@ -418,8 +413,8 @@ const RecordsPage = () => {
 
     const ActionCard = ({ title, children }) => (
         <Col md={4}>
-            <div className="action-section">
-                <h5 className="mb-3">{title}</h5>
+            <div className="action-section mb-3 mb-md-0">
+                <h6 className="mb-3">{title}</h6>
                 {children}
             </div>
         </Col>
@@ -441,47 +436,74 @@ const RecordsPage = () => {
                 room={room}
                 onDeclare={handleDeclareWin}
             />
-            <Container className="py-4">
-                <div className="records-container p-4 rounded-4">
-                    <h2 className="mb-4"><FontAwesomeIcon icon={faClipboard} /> Game Records</h2>
-                    <Row className="mb-5">
-                        <ActionCard title="胡 (Hu - Win)">
-                            <Button className="btn-declare-win w-100" onClick={toggleWinModal}>🎉 Declare Win</Button>
-                        </ActionCard>
-                        <ActionCard title="花 (Hua - Flower)">
-                            <Button className="btn-record-action w-100" onClick={toggleModal}>
-                                <FontAwesomeIcon icon={faPlus} /> Add Flower Tile
+            <Modal isOpen={winnerModalOpen} toggle={handleCloseWinnerModalAndRedirect} centered>
+                <ModalHeader>Game Over!</ModalHeader>
+                <ModalBody className="text-center">
+                    {gameWinner ? (
+                        <>
+                            <h4>🎉 The Winner is {gameWinner.name}! 🎉</h4>
+                            <p className="lead">Final Score: {gameWinner.score}</p>
+                        </>
+                    ) : (
+                        <p>The game has ended.</p>
+                    )}
+                </ModalBody>
+                <ModalFooter>
+                    <Button color="primary" onClick={handleCloseWinnerModalAndRedirect}>Back to Home</Button>
+                </ModalFooter>
+            </Modal>
+            <Container className="py-3">
+                <div className="records-container p-3 rounded-4">
+                    <h4 className="mb-4"><FontAwesomeIcon icon={faClipboard} /> Game Records</h4>
+                    <Row>
+                        <ActionCard title="Declare Win">
+                            <Button className="btn-declare-win" onClick={toggleWinModal} block>
+                                <FontAwesomeIcon icon={faTrophy} className="me-2" /> Declare Hu
                             </Button>
                         </ActionCard>
-                        <ActionCard title="槓 (Gang - Kong)">
-                             <Input type="select" className="mb-2" value={selectedKongType} onChange={e => setSelectedKongType(e.target.value)}>
+                        <ActionCard title="Add Flower">
+                            <Button className="btn-record-action" onClick={toggleModal} block>
+                                <FontAwesomeIcon icon={faPlus} className="me-2" /> Add Flower
+                            </Button>
+                        </ActionCard>
+                        <ActionCard title="Record Kong">
+                            <Input 
+                                type="select" 
+                                value={selectedKongType} 
+                                onChange={(e) => setSelectedKongType(e.target.value)}
+                                className="mb-2"
+                            >
                                 <option>Concealed Kong</option>
+                                <option>Exposed Kong</option>
                                 <option>Melded Kong</option>
                             </Input>
-                            {selectedKongType === 'Melded Kong' && (
-                                <Input type="select" className="mb-2" value={selectedKongTarget} onChange={e => setSelectedKongTarget(e.target.value)}>
-                                    {players.filter(p => p.uid !== currentUser?.uid).map(p => <option key={p.uid} value={p.uid}>{p.wind} - {p.name}</option>)}
-                                 </Input>
+                            {selectedKongType !== 'Concealed Kong' && (
+                                <Input 
+                                    type="select" 
+                                    value={selectedKongTarget} 
+                                    onChange={(e) => setSelectedKongTarget(e.target.value)}
+                                    className="mb-2"
+                                >
+                                    {players.filter(p => p.uid !== currentUser?.uid).map(p => (
+                                        <option key={p.uid} value={p.uid}>{p.name}</option>
+                                    ))}
+                                </Input>
                             )}
-                            <Button className="btn-record-action w-100" onClick={handleRecordKong}>■ Record Kong</Button>
+                            <Button className="btn-record-action" onClick={handleRecordKong} block>
+                                <FontAwesomeIcon icon={faClipboard} className="me-2" /> Record Kong
+                            </Button>
                         </ActionCard>
                     </Row>
                     
-                    <hr className="my-4" />
-
-                    <Row>
-                        <Col>
-                            <div className="action-section text-md-start">
-                                <h5 className="mb-3">Other Actions</h5>
-                                <Button className="btn-record-action me-2" onClick={handleUndoLastAction}><FontAwesomeIcon icon={faUndo} /> Undo Last Action</Button>
-                                <Button className="btn-record-action" onClick={handleDeclareDraw}><FontAwesomeIcon icon={faHandshake} /> Declare Draw</Button>
-                            </div>
-                        </Col>
-                    </Row>
+                    <div className="mt-4">
+                        <h6 className="mb-3">Other Actions</h6>
+                        <Button className="btn-record-action me-2" onClick={handleUndoLastAction}><FontAwesomeIcon icon={faUndo} /> Undo Last Action</Button>
+                        <Button className="btn-record-action" onClick={handleDeclareDraw}><FontAwesomeIcon icon={faHandshake} /> Declare Draw</Button>
+                    </div>
                 </div>
 
-                <div className="mt-5">
-                    <h2 className="text-center mb-4"><FontAwesomeIcon icon={faTrophy} /> Current Scores</h2>
+                <div className="mt-4">
+                    <h4 className="text-center mb-4"><FontAwesomeIcon icon={faTrophy} /> Current Scores</h4>
                     <Row>
                         {players.map(player => (
                             <Col md={6} key={player.uid} className="mb-4">

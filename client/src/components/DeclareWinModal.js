@@ -3,10 +3,11 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Modal, ModalHeader, ModalBody, ModalFooter, Button, Form, FormGroup, Label, Input, Row, Col
+  Modal, ModalHeader, ModalBody, ModalFooter, Button, Form, FormGroup, Label, Input
 } from 'reactstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
+import SelectWinTilesModal from './SelectWinTilesModal';
 
 const handTypes = [
   { name: '平胡 (Basic Win)', tai: 1 },
@@ -15,6 +16,7 @@ const handTypes = [
   { name: '清一色 (Pure Suit)', tai: 8 },
   { name: '字一色 (All Honors)', tai: 8 },
   { name: 'Custom Tai', tai: null },
+  { name: 'Hand from Tiles', tai: null, hidden: true }, // For internal use
 ];
 
 const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare }) => {
@@ -22,6 +24,8 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
   const [losingPlayerId, setLosingPlayerId] = useState('');
   const [taiValue, setTaiValue] = useState(1);
   const [handType, setHandType] = useState('Custom Tai');
+  const [isTilesModalOpen, setIsTilesModalOpen] = useState(false);
+  const [winningHand, setWinningHand] = useState([]);
 
   const winner = players.find(p => p.uid === currentUser?.uid);
 
@@ -29,7 +33,7 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
     const selectedHand = handTypes.find(h => h.name === handType);
     if (selectedHand && selectedHand.tai !== null) {
       setTaiValue(selectedHand.tai);
-    } else {
+    } else if (handType !== 'Hand from Tiles') {
       // Default to 1 if switching back to Custom Tai
       setTaiValue(1);
     }
@@ -58,75 +62,95 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
     setTaiValue(prev => Math.max(1, prev + amount));
   };
 
+  const toggleTilesModal = () => setIsTilesModalOpen(!isTilesModalOpen);
+
+  const handleHandConfirm = (hand, calculatedTai) => {
+    setWinningHand(hand);
+    setTaiValue(calculatedTai);
+    setHandType('Hand from Tiles'); 
+  };
+
   return (
-    <Modal isOpen={isOpen} toggle={toggle} centered>
-      <ModalHeader toggle={toggle} className="win-modal-header">
-        🎉 Declare Win (胡)
-      </ModalHeader>
-      <ModalBody>
-        <Form>
-          <FormGroup>
-            <Label>Winner</Label>
-            <Input type="text" value={winner?.name || ''} disabled />
-          </FormGroup>
-          <FormGroup>
-            <Label>Current Wind</Label>
-            <Input type="text" value={room?.currentWind || 'East Wind (東風)'} disabled />
-          </FormGroup>
-          <FormGroup check className="mb-3">
-            <Label check>
-              <Input type="checkbox" checked={isSelfDrawn} onChange={() => setIsSelfDrawn(!isSelfDrawn)} />{' '}
-              Self Drawn (自摸)
-            </Label>
-          </FormGroup>
-          {!isSelfDrawn && (
+    <>
+      <Modal isOpen={isOpen} toggle={toggle} centered>
+        <ModalHeader toggle={toggle} className="win-modal-header">
+          🎉 Declare Win (胡)
+        </ModalHeader>
+        <ModalBody>
+          <Form>
             <FormGroup>
-              <Label for="losingPlayer">Losing Player (放槍者)</Label>
-              <Input type="select" name="losingPlayer" id="losingPlayer" value={losingPlayerId} onChange={(e) => setLosingPlayerId(e.target.value)}>
-                {players.filter(p => p.uid !== currentUser?.uid).map(p => (
-                  <option key={p.uid} value={p.uid}>{p.name} ({p.wind})</option>
+              <Label>Winner</Label>
+              <Input type="text" value={winner?.name || ''} disabled />
+            </FormGroup>
+            <FormGroup>
+              <Label>Current Wind</Label>
+              <Input type="text" value={room?.currentWind || 'East Wind (東風)'} disabled />
+            </FormGroup>
+            <FormGroup check className="mb-3">
+              <Label check>
+                <Input type="checkbox" checked={isSelfDrawn} onChange={() => setIsSelfDrawn(!isSelfDrawn)} />{' '}
+                Self Drawn (自摸)
+              </Label>
+            </FormGroup>
+            {!isSelfDrawn && (
+              <FormGroup>
+                <Label for="losingPlayer">Losing Player (放槍者)</Label>
+                <Input type="select" name="losingPlayer" id="losingPlayer" value={losingPlayerId} onChange={(e) => setLosingPlayerId(e.target.value)}>
+                  {players.filter(p => p.uid !== currentUser?.uid).map(p => (
+                    <option key={p.uid} value={p.uid}>{p.name} ({p.wind})</option>
+                  ))}
+                </Input>
+              </FormGroup>
+            )}
+            <FormGroup>
+              <Label for="handType">Hand Type</Label>
+              <Input type="select" name="handType" id="handType" value={handType} onChange={(e) => setHandType(e.target.value)}>
+                {handTypes.filter(h => !h.hidden).map(hand => (
+                  <option key={hand.name} value={hand.name}>
+                    {hand.name}{hand.tai !== null ? ` - ${hand.tai} Tai` : ''}
+                  </option>
                 ))}
+                {handType === 'Hand from Tiles' && (
+                    <option key="hand-from-tiles" value="Hand from Tiles">
+                        Hand from Tiles - {taiValue} Tai
+                    </option>
+                )}
               </Input>
             </FormGroup>
-          )}
-          <FormGroup>
-            <Label for="handType">Hand Type</Label>
-            <Input type="select" name="handType" id="handType" value={handType} onChange={(e) => setHandType(e.target.value)}>
-              {handTypes.map(hand => (
-                <option key={hand.name} value={hand.name}>
-                  {hand.name}{hand.tai !== null ? ` - ${hand.tai} Tai` : ''}
-                </option>
-              ))}
-            </Input>
-          </FormGroup>
-          {handType === 'Custom Tai' ? (
-            <FormGroup>
-              <Label>Custom Tai Value</Label>
-              <div className="d-flex align-items-center justify-content-center">
-                <Button color="secondary" onClick={() => handleTaiChange(-1)} className="me-3">
-                  <FontAwesomeIcon icon={faMinus} />
-                </Button>
-                <span className="h4 mx-3 mb-0">{taiValue}</span>
-                <Button color="secondary" onClick={() => handleTaiChange(1)} className="ms-3">
-                  <FontAwesomeIcon icon={faPlus} />
-                </Button>
-              </div>
-            </FormGroup>
-          ) : (
-            <FormGroup>
-              <Label>Tai Value</Label>
-              <Input type="text" value={`${taiValue} Tai`} disabled />
-            </FormGroup>
-          )}
-        </Form>
-      </ModalBody>
-      <ModalFooter className="win-modal-footer">
-        <Button color="primary" onClick={handleSubmit}>
-          Calculate & Apply
-        </Button>
-        <Button color="secondary" disabled>Select Tiles</Button>
-      </ModalFooter>
-    </Modal>
+            {handType === 'Custom Tai' ? (
+              <FormGroup>
+                <Label>Custom Tai Value</Label>
+                <div className="d-flex align-items-center justify-content-center">
+                  <Button color="secondary" onClick={() => handleTaiChange(-1)} className="me-3">
+                    <FontAwesomeIcon icon={faMinus} />
+                  </Button>
+                  <span className="h4 mx-3 mb-0">{taiValue}</span>
+                  <Button color="secondary" onClick={() => handleTaiChange(1)} className="ms-3">
+                    <FontAwesomeIcon icon={faPlus} />
+                  </Button>
+                </div>
+              </FormGroup>
+            ) : (
+              <FormGroup>
+                <Label>Tai Value</Label>
+                <Input type="text" value={`${taiValue} Tai`} disabled />
+              </FormGroup>
+            )}
+          </Form>
+        </ModalBody>
+        <ModalFooter className="win-modal-footer">
+          <Button color="primary" onClick={handleSubmit}>
+            Calculate & Apply
+          </Button>
+          <Button color="secondary" onClick={toggleTilesModal}>Select Tiles</Button>
+        </ModalFooter>
+      </Modal>
+      <SelectWinTilesModal
+        isOpen={isTilesModalOpen}
+        toggle={toggleTilesModal}
+        onConfirm={handleHandConfirm}
+      />
+    </>
   );
 };
 

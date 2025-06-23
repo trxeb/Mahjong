@@ -8,9 +8,10 @@ import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Home from './pages/Home';
 import GameMasterPage from './pages/GameMasterPage';
-import ProfilePage from './pages/ProfilePage';
 import RecordsPage from './pages/RecordsPage';
 import ScorePage from './pages/ScorePage';
+import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
 
 // Shared Components
 import SideBar from './components/SideBar';
@@ -36,9 +37,10 @@ const App = () => {
           {/* Protected Routes */}
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/gamemaster/:roomCode" element={<ProtectedRoute><GameMasterPage /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/records/:roomCode" element={<ProtectedRoute><RecordsPage /></ProtectedRoute>} />
           <Route path="/score/:roomCode" element={<ProtectedRoute><ScorePage /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
           {/* Fallback route */}
           <Route path="*" element={<ProtectedRoute><Home /></ProtectedRoute>} />

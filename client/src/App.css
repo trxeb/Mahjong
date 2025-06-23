@@ -49,7 +49,7 @@
 }
 
 .home-container {
-  background-color: white;
+  background-color: #f5f0e1;
   max-width: 800px;
   width: 100%;
 }
@@ -88,7 +88,7 @@
 
 /* Game Master Page Styles */
 .gm-background {
-  background-color: #f5f0e1; /* Beige background */
+  background-color: #e4dccf; /* Soft Beige */
   min-height: 100vh;
   font-family: 'Inter', sans-serif;
   color: #333;
@@ -96,19 +96,20 @@
 
 .gm-header {
   font-weight: bold;
+  color: #333; /* Dark text */
 }
 
 .room-code-display {
-  background-color: #6c757d;
-  color: white;
-  text-align: center;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  font-size: 1.5rem;
-  font-weight: bold;
+  background-color: transparent;
+  color: #6C757D; /* Muted grey text */
+  text-align: left;
+  padding: 0;
+  margin-bottom: 1.5rem !important; /* Overriding margin */
+  font-size: 1.2rem;
+  font-weight: normal;
 }
 
-/* Removing old player card styles from GM Page */
+/* Remove old player card styles from GM Page */
 .player-card,
 .player-card-wind,
 .player-card-name,
@@ -117,35 +118,57 @@
     background-color: transparent;
 }
 
-/* Remove old pill-style wind indicator */
-.wind-indicator {
-  display: none;
+/* New Player Card styles for GM page */
+.player-score-card {
+    border-radius: 0.5rem;
+    border: 1px solid #E0E0E0; /* Light grey border */
+    background-color: #FFFFFF; /* Solid white background */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-.player-name {
-  font-size: 1.2rem;
-  font-weight: bold;
+.player-score-card .wind-indicator {
+    display: block;
+    background-color: transparent;
+    color: #333;
+    padding: 0;
+    border-radius: 0;
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
 }
 
-.player-score {
-  font-size: 2rem;
-  font-weight: bold;
+.player-score-card .player-name {
+    font-weight: normal;
+    font-size: 1rem;
+    color: #6C757D;
 }
 
-.gm-btn, .gm-btn:hover {
-  background-color: #6c757d;
-  border-color: #6c757d;
+.player-score-card .player-score {
+    font-size: 1.75rem;
+    font-weight: bold;
+    margin: 0.25rem 0;
+    color: #333;
+}
+
+.player-score-card .text-muted {
+  color: #6c757d !important; /* Override bootstrap muted color */
+}
+
+.gm-btn, .gm-btn:hover, .gm-btn:disabled {
+  background-color: #6C757D !important; /* Neutral dark grey */
+  border-color: #6C757D !important;
+  color: white;
 }
 
 .gm-btn-alt, .gm-btn-alt:hover {
-  background-color: #f5f0e1;
-  color: #333;
-  border-color: #6c757d;
+  background-color: #6C757D; /* Same neutral dark grey */
+  color: white;
+  border-color: #6C757D;
 }
 
 .gm-btn-danger, .gm-btn-danger:hover {
-    background-color: #dc3545;
-    border-color: #dc3545;
+    background-color: #A94442;
+    border-color: #A94442;
 }
 
 /* Sidebar font size */
@@ -168,7 +191,7 @@
 
 .action-section {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
 }
 
 .btn-declare-win {
@@ -193,7 +216,7 @@
 
 /* Score Page Styles (re-used on GM Page and Records Page) */
 .score-background {
-    background-color: #f8f9fa;
+    background-color: #e4dccf;
     min-height: 100vh;
     font-family: 'Inter', sans-serif;
     transition: all 0.2s ease-in-out;
@@ -223,10 +246,4 @@
     font-size: 2rem;
     font-weight: 700;
     margin: 0.25rem 0;
-}
-
-.player-score-card.highlight {
-    border-color: #28a745;
-    background-color: #e9f5ec;
-    box-shadow: 0 0 15px rgba(40, 167, 69, 0.2);
 }

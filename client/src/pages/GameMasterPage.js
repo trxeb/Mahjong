@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, onSnapshot, updateDoc, arrayUnion, getDoc, deleteDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, arrayUnion, getDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../firebase-config';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Container, Row, Col, Button, Card, CardBody, Dropdown, DropdownToggle, DropdownMenu, DropdownItem, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCrown, faSync, faStopCircle, faPlayCircle, faTrophy } from '@fortawesome/free-solid-svg-icons';
+import { ALL_FLOWER_TILES } from '../constants/mahjong';
 
 const GameMasterPage = () => {
     const { roomCode } = useParams();
@@ -63,6 +64,15 @@ const GameMasterPage = () => {
 
                 const playerInRoom = currentPlayers.find(p => p.uid === currentUser.uid);
 
+                if (currentRoomData.status === 'finished') {
+                    if (currentRoomData.winner) {
+                        const winnerData = currentPlayers.find(p => p.uid === currentRoomData.winner.uid);
+                        setGameWinner(winnerData || currentRoomData.winner);
+                    }
+                    setWinnerModalOpen(true);
+                    return;
+                }
+
                 if (currentRoomData.status === 'in_round' && playerInRoom) {
                     navigate(`/records/${roomCode}`);
                     return;
@@ -87,7 +97,8 @@ const GameMasterPage = () => {
                         wind: ''
                     };
                     updateDoc(roomRef, {
-                        players: arrayUnion(newPlayer)
+                        players: arrayUnion(newPlayer),
+                        playerUIDs: arrayUnion(currentUser.uid)
                     });
                 }
 
@@ -114,7 +125,7 @@ const GameMasterPage = () => {
 
         return () => unsubscribeRoom();
 
-    }, [roomCode, currentUser?.uid, navigate]);
+    }, [roomCode, currentUser, navigate, winds]);
     
     const handleWindSelection = async (wind) => {
         if (!currentUser) return;
@@ -132,17 +143,22 @@ const GameMasterPage = () => {
     const handleEndGame = async () => {
         toggleConfirmEndModal(); // Close confirmation modal
     
+        let winner = null;
         if (players.length > 0) {
-            const winner = players.reduce((prev, current) => (prev.score > current.score) ? prev : current);
+            winner = players.reduce((prev, current) => (prev.score > current.score) ? prev : current);
             setGameWinner(winner);
         }
     
         const roomRef = doc(db, 'rooms', roomCode);
         try {
-            await deleteDoc(roomRef);
-            console.log("Room successfully deleted.");
+            await updateDoc(roomRef, {
+                status: 'finished',
+                finishedAt: serverTimestamp(),
+                winner: winner ? { uid: winner.uid, name: winner.name } : null
+            });
+            console.log("Room successfully archived.");
         } catch (error) {
-            console.error("Error deleting room: ", error);
+            console.error("Error archiving room: ", error);
         }
         
         setWinnerModalOpen(true);
@@ -158,7 +174,8 @@ const GameMasterPage = () => {
         const roomRef = doc(db, 'rooms', roomCode);
         try {
             await updateDoc(roomRef, {
-                status: 'in_round'
+                status: 'in_round',
+                availableFlowerTiles: ALL_FLOWER_TILES
             });
         } catch (error) {
             console.error("Error starting round: ", error);

@@ -1,0 +1,46 @@
+.profile-header {
+    color: #6D7275;
+    font-weight: bold;
+    margin-bottom: 1.5rem !important;
+}
+
+.stat-card {
+    background-color: #F3F0E9 !important;
+    border: 1px solid #EAE6DD !important;
+    border-radius: 0.75rem !important;
+    box-shadow: none !important;
+    padding: 1.5rem 1rem;
+}
+
+.stat-card .stat-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #6D7275;
+    margin-bottom: 0.5rem;
+}
+
+.stat-card .stat-title {
+    font-size: 1rem;
+    color: #8C8882;
+}
+
+.game-history-card {
+    border-radius: 0.75rem;
+    border: 1px solid #EAE6DD;
+}
+
+.profile-info {
+    margin-bottom: 2rem;
+}
+
+.profile-username {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.user-email {
+    font-size: 1.1rem;
+    color: #6D7275;
+    margin-top: 0.5rem;
+} 

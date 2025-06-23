@@ -29,6 +29,15 @@ const TileGroup = ({ title, tiles, onSelect, availableTiles }) => (
     </Col>
 );
 
+const FlowerTile = ({ tile, onSelect }) => (
+    <Button 
+        className="flower-tile"
+        onClick={() => onSelect(tile)}
+    >
+        {tile.unicode || tile.name}
+    </Button>
+);
+
 const FlowerModal = ({ isOpen, toggle, onSelect, availableTiles }) => {    
     return (
         <Modal isOpen={isOpen} toggle={toggle} centered size="lg">

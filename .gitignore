@@ -1,0 +1,36 @@
+# Node modules
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Build output
+client/build/
+server/build/
+
+# Environment files
+.env
+client/.env
+server/.env
+
+# Firebase service account keys
+server/config/serviceAccountKey.json
+
+# Misc
+*.swp
+*.swo
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project 
