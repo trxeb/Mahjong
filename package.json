@@ -1,6 +1,6 @@
 {
   "dependencies": {
     "bootstrap": "^5.3.6",
-    "firebase": "^11.8.1"
+    "firebase": "^11.9.1"
   }
 }
