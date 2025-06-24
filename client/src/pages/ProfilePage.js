@@ -4,7 +4,8 @@ import { db } from '../firebase-config';
 import { useAuth } from '../hooks/useAuth';
 import { Container, Row, Col, Card, CardHeader, CardBody, CardTitle, CardText, Spinner, Button } from 'reactstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrophy, faChartLine, faPercentage, faPlusMinus, faEnvelope, faTrash } from '@fortawesome/free-solid-svg-icons';import './ProfilePage.css';
+import { faTrophy, faChartLine, faPercentage, faPlusMinus, faEnvelope, faTrash } from '@fortawesome/free-solid-svg-icons';
+import './ProfilePage.css';
 
 const ProfilePage = () => {
     const { user } = useAuth();
@@ -122,7 +123,7 @@ const ProfilePage = () => {
             {gameHistory.length > 0 ? (
                 <ul style={{ listStyle: 'none', padding: 0 }}>
                     {gameHistory.map(game => (
-                        <li key={game.id} className="d-flex align-items-center mb-3 p-3" style={{ border: '1px solid #eee', borderRadius: '8px' }}>
+                        <li key={game.id} className="game-history-card d-flex align-items-center mb-3">
                             <div style={{ flex: 1 }}>
                                 <div>
                                     <strong>Room:</strong> {game.roomCode || game.id}
