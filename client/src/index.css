@@ -66,8 +66,8 @@ code {
 }
 
 .player-score-card {
-  background-color: #483D8B; /* Dark Slate Blue/Purple */
-  color: white;
+  background-color: #f5f0e1; /* Beige */
+  color: #333;
   border: none;
   border-radius: 1rem;
   padding: 1.5rem;
@@ -99,4 +99,13 @@ code {
   color: #0a0a0a; /* Gold color for score */
   text-align: left;
   margin: 0.5rem 0;
-} 
+}
+
+.gm-background {
+  background: #f5f0e1 !important; /* Match your global beige */
+}
+
+.score-background {
+  background: #f5f0e1 !important; /* Beige */
+  min-height: 100vh;
+}
