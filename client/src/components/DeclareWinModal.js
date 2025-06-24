@@ -10,11 +10,19 @@ import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
 import SelectWinTilesModal from './SelectWinTilesModal';
 
 const handTypes = [
-  { name: '平胡 (Basic Win)', tai: 1 },
-  { name: '對對胡 (All Pungs)', tai: 2 },
-  { name: '混一色 (Mixed Suit)', tai: 3 },
-  { name: '清一色 (Pure Suit)', tai: 8 },
-  { name: '字一色 (All Honors)', tai: 8 },
+  // Basic Combinations
+  { name: 'Pong Pong (對對胡 / All Pungs)', tai: 2 },
+  { name: 'Ping Hu (平胡 / All Chows)', tai: 4 },
+  { name: 'Cao Ping Hu (草平胡 / Ruined Ping Hu)', tai: 1 },
+  // Advanced Combinations
+  { name: 'Half-Colour (Same Suit + Big Cards)', tai: 2 },
+  { name: 'Half-Colour Pong Pong (Same Suit + Big Cards + All Pungs)', tai: 4 },
+  { name: 'Full-Colour (Same Suit Only)', tai: 4 },
+  { name: 'Full-Colour Ping Hu (Same Suit + Ping Hu)', tai: 5 },
+  // Rare Combinations
+  { name: 'Seven Pairs (七对子)', tai: 5 },
+  { name: 'Thirteen Orphans (十三么)', tai: 5 },
+  // Bonus: fallback and custom
   { name: 'Custom Tai', tai: null },
   { name: 'Hand from Tiles', tai: null, hidden: true }, // For internal use
 ];
@@ -64,10 +72,18 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
 
   const toggleTilesModal = () => setIsTilesModalOpen(!isTilesModalOpen);
 
-  const handleHandConfirm = (hand, calculatedTai) => {
+  const handleHandConfirm = (hand, calculatedTai, detectedPattern) => {
     setWinningHand(hand);
     setTaiValue(calculatedTai);
-    setHandType('Hand from Tiles'); 
+    // Try to match detectedPattern to a handType
+    const match = handTypes.find(h => detectedPattern && detectedPattern.startsWith(h.name));
+    if (match) {
+      setHandType(match.name);
+    } else if (detectedPattern && detectedPattern !== 'Incomplete Hand') {
+      setHandType(detectedPattern);
+    } else {
+      setHandType('Hand from Tiles');
+    }
   };
 
   return (

@@ -63,3 +63,124 @@ export const ALL_PLAYING_TILES = [
     ...SUITS.DOTS, ...SUITS.BAMBOO, ...SUITS.CHARACTERS,
     ...HONORS.WINDS, ...HONORS.DRAGONS
 ];
+
+// Mahjong pattern detection framework
+const patterns = [
+  {
+    name: 'Thirteen Orphans (十三么)',
+    tai: 5,
+    detect: (hand) => {
+      // 1 & 9 of each suit, all winds, all dragons, and any pair
+      const required = [
+        // 1 & 9 of each suit
+        'Dots1','Dots9','Bamboo1','Bamboo9','Characters1','Characters9',
+        // Winds
+        'E','S','W','N',
+        // Dragons
+        'Red','Green','White'
+      ];
+      const ids = hand.map(t => t.id);
+      const unique = new Set(ids);
+      let hasAll = required.every(id => unique.has(id));
+      // Must have 14 tiles and a pair of any of the required
+      let pairFound = false;
+      for (let id of required) {
+        if (ids.filter(x => x === id).length === 2) pairFound = true;
+      }
+      return hand.length === 14 && hasAll && pairFound;
+    }
+  },
+  {
+    name: 'Seven Pairs (七对子)',
+    tai: 5,
+    detect: (hand) => {
+      if (hand.length !== 14) return false;
+      const counts = {};
+      hand.forEach(tile => { counts[tile.id] = (counts[tile.id] || 0) + 1; });
+      return Object.values(counts).every(v => v === 2);
+    }
+  },
+  {
+    name: 'Full-Colour Ping Hu (Same Suit + Ping Hu)',
+    tai: 5,
+    detect: (hand) => {
+      // All tiles from same suit, and isPingHu
+      const suits = hand.filter(t => t.group === 'SUITS').map(t => t.suit);
+      const uniqueSuits = new Set(suits);
+      const bigCards = hand.filter(t => t.group === 'HONORS');
+      return uniqueSuits.size === 1 && bigCards.length === 0 && isPingHu(hand);
+    }
+  },
+  {
+    name: 'Full-Colour (Same Suit Only)',
+    tai: 4,
+    detect: (hand) => {
+      const suits = hand.filter(t => t.group === 'SUITS').map(t => t.suit);
+      const uniqueSuits = new Set(suits);
+      const bigCards = hand.filter(t => t.group === 'HONORS');
+      return uniqueSuits.size === 1 && bigCards.length === 0;
+    }
+  },
+  {
+    name: 'Half-Colour Pong Pong (Same Suit + Big Cards + All Pungs)',
+    tai: 4,
+    detect: (hand) => {
+      const suits = hand.filter(t => t.group === 'SUITS').map(t => t.suit);
+      const uniqueSuits = new Set(suits);
+      const bigCards = hand.filter(t => t.group === 'HONORS');
+      return uniqueSuits.size === 1 && bigCards.length <= 2 && isPongPong(hand);
+    }
+  },
+  {
+    name: 'Ping Hu (平胡 / All Chows)',
+    tai: 4,
+    detect: (hand) => isPingHu(hand)
+  },
+  {
+    name: 'Pong Pong (對對胡 / All Pungs)',
+    tai: 2,
+    detect: (hand) => isPongPong(hand)
+  },
+  {
+    name: 'Half-Colour (Same Suit + Big Cards)',
+    tai: 2,
+    detect: (hand) => {
+      const suits = hand.filter(t => t.group === 'SUITS').map(t => t.suit);
+      const uniqueSuits = new Set(suits);
+      const bigCards = hand.filter(t => t.group === 'HONORS');
+      return uniqueSuits.size === 1 && bigCards.length <= 2;
+    }
+  },
+  {
+    name: 'Cao Ping Hu (草平胡 / Ruined Ping Hu)',
+    tai: 1,
+    detect: (hand, playerWind, tableWind, flowers, animals) => {
+      return isPingHu(hand) && ((flowers && flowers.length > 0) || (animals && animals.length > 0));
+    }
+  },
+];
+
+// Helper: Pong Pong (All Pungs)
+function isPongPong(hand) {
+  const counts = {};
+  hand.forEach(tile => { counts[tile.id] = (counts[tile.id] || 0) + 1; });
+  const values = Object.values(counts);
+  return values.filter(v => v === 2).length === 1 && values.filter(v => v === 3).length === 4;
+}
+// Helper: Ping Hu (All Chows + 1 pair, no big cards in pair, no longkang wait)
+function isPingHu(hand) {
+  // This is a simplified placeholder. Real implementation requires hand parsing.
+  // For now, just check for 4 chows and a pair, and no big cards in pair.
+  // TODO: Implement full hand parser for chows.
+  return false;
+}
+
+// Main detection function: returns highest tai pattern
+export function detectBestPattern(hand, playerWind, tableWind, flowers, animals) {
+  for (const pattern of patterns) {
+    if (pattern.detect(hand, playerWind, tableWind, flowers, animals)) {
+      return { pattern: pattern.name, tai: pattern.tai };
+    }
+  }
+  return { pattern: 'Basic Win', tai: 1 };
+}

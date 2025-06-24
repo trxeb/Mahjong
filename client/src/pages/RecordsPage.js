@@ -18,6 +18,16 @@ const windRotationMap = {
 };
 
 const defaultTaiSettings = {
+    pongPong: 2,
+    pingHu: 4,
+    caoPingHu: 1,
+    halfColour: 2,
+    halfColourPongPong: 4,
+    fullColour: 4,
+    fullColourPingHu: 5,
+    sevenPairs: 5,
+    thirteenOrphans: 5,
+    // legacy keys for compatibility
     baseWin: 1,
     selfDraw: 1,
     allPungs: 2,
@@ -43,7 +53,7 @@ const RecordsPage = () => {
     const [winnerModalOpen, setWinnerModalOpen] = useState(false);
     const [gameWinner, setGameWinner] = useState(null);
     const [taiSettings, setTaiSettings] = useState(defaultTaiSettings);
-    const [taiForm, setTaiForm] = useState(defaultTaiSettings);
+    const [taiForm, setTaiForm] = useState({ ...defaultTaiSettings });
     const [taiLoading, setTaiLoading] = useState(true);
     const [isMingGangSelfDrawn, setIsMingGangSelfDrawn] = useState(false);
 
@@ -524,27 +534,46 @@ const RecordsPage = () => {
                         {taiLoading ? <span>Loading...</span> : (
                         <form onSubmit={handleTaiSave} className="row g-3 align-items-end">
                             <div className="col-md-2">
-                                <label htmlFor="baseWin" className="form-label">平胡 (Basic Win)</label>
-                                <input type="number" className="form-control" name="baseWin" id="baseWin" value={taiForm.baseWin} onChange={handleTaiInputChange} />
+                                <label htmlFor="pongPong" className="form-label">Pong Pong (對對胡 / All Pungs)</label>
+                                <input type="number" className="form-control" name="pongPong" id="pongPong" value={taiForm.pongPong} onChange={handleTaiInputChange} />
                             </div>
                             <div className="col-md-2">
-                                <label htmlFor="selfDraw" className="form-label">自摸 (Self Draw)</label>
-                                <input type="number" className="form-control" name="selfDraw" id="selfDraw" value={taiForm.selfDraw} onChange={handleTaiInputChange} />
+                                <label htmlFor="pingHu" className="form-label">Ping Hu (平胡 / All Chows)</label>
+                                <input type="number" className="form-control" name="pingHu" id="pingHu" value={taiForm.pingHu} onChange={handleTaiInputChange} />
                             </div>
                             <div className="col-md-2">
-                                <label htmlFor="allPungs" className="form-label">對對胡 (All Pungs)</label>
-                                <input type="number" className="form-control" name="allPungs" id="allPungs" value={taiForm.allPungs} onChange={handleTaiInputChange} />
+                                <label htmlFor="caoPingHu" className="form-label">Cao Ping Hu (草平胡 / Ruined Ping Hu)</label>
+                                <input type="number" className="form-control" name="caoPingHu" id="caoPingHu" value={taiForm.caoPingHu} onChange={handleTaiInputChange} />
                             </div>
                             <div className="col-md-2">
-                                <label htmlFor="pureSuit" className="form-label">清一色 (Pure Suit)</label>
-                                <input type="number" className="form-control" name="pureSuit" id="pureSuit" value={taiForm.pureSuit} onChange={handleTaiInputChange} />
+                                <label htmlFor="halfColour" className="form-label">Half-Colour (Same Suit + Big Cards)</label>
+                                <input type="number" className="form-control" name="halfColour" id="halfColour" value={taiForm.halfColour} onChange={handleTaiInputChange} />
                             </div>
                             <div className="col-md-2">
-                                <label htmlFor="allHonors" className="form-label">字一色 (All Honors)</label>
-                                <input type="number" className="form-control" name="allHonors" id="allHonors" value={taiForm.allHonors} onChange={handleTaiInputChange} />
+                                <label htmlFor="halfColourPongPong" className="form-label">Half-Colour Pong Pong</label>
+                                <input type="number" className="form-control" name="halfColourPongPong" id="halfColourPongPong" value={taiForm.halfColourPongPong} onChange={handleTaiInputChange} />
+                            </div>
+                            <div className="col-md-2">
+                                <label htmlFor="fullColour" className="form-label">Full-Colour (Same Suit Only)</label>
+                                <input type="number" className="form-control" name="fullColour" id="fullColour" value={taiForm.fullColour} onChange={handleTaiInputChange} />
+                            </div>
+                            <div className="col-md-2">
+                                <label htmlFor="fullColourPingHu" className="form-label">Full-Colour Ping Hu</label>
+                                <input type="number" className="form-control" name="fullColourPingHu" id="fullColourPingHu" value={taiForm.fullColourPingHu} onChange={handleTaiInputChange} />
+                            </div>
+                            <div className="col-md-2">
+                                <label htmlFor="sevenPairs" className="form-label">Seven Pairs (七对子)</label>
+                                <input type="number" className="form-control" name="sevenPairs" id="sevenPairs" value={taiForm.sevenPairs} onChange={handleTaiInputChange} />
+                            </div>
+                            <div className="col-md-2">
+                                <label htmlFor="thirteenOrphans" className="form-label">Thirteen Orphans (十三么)</label>
+                                <input type="number" className="form-control" name="thirteenOrphans" id="thirteenOrphans" value={taiForm.thirteenOrphans} onChange={handleTaiInputChange} />
                             </div>
                             <div className="col-md-2 d-grid">
                                 <button type="submit" className="btn btn-secondary">Save</button>
+                            </div>
+                            <div className="col-md-2 d-grid">
+                                <button type="button" className="btn btn-outline-secondary" onClick={() => setTaiForm({ ...defaultTaiSettings })}>Reset to Default</button>
                             </div>
                         </form>
                         )}
