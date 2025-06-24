@@ -247,3 +247,8 @@
     font-weight: 700;
     margin: 0.25rem 0;
 }
+
+body, html, #root {
+  background-color: #f5f0e1 !important;
+  min-height: 100vh;
+}

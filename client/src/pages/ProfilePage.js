@@ -4,7 +4,8 @@ import { db } from '../firebase-config';
 import { useAuth } from '../hooks/useAuth';
 import { Container, Row, Col, Card, CardHeader, CardBody, CardTitle, CardText, Spinner, Button } from 'reactstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrophy, faChartLine, faPercentage, faPlusMinus, faEnvelope, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faTrophy, faChartLine, faPercentage, faPlusMinus, faEnvelope } from '@fortawesome/free-solid-svg-icons';
+import { doc, getDoc } from 'firebase/firestore';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
@@ -17,15 +18,16 @@ const ProfilePage = () => {
     });
     const [gameHistory, setGameHistory] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [username, setUsername] = useState('');
 
     useEffect(() => {
         const fetchGameData = async () => {
             if (!user) return;
             setLoading(true);
-            
+
             const roomsRef = collection(db, 'rooms');
             const q = query(
-                roomsRef, 
+                roomsRef,
                 where('playerUIDs', 'array-contains', user.uid),
                 where('status', '==', 'finished'),
                 orderBy('finishedAt', 'desc')
@@ -63,6 +65,19 @@ const ProfilePage = () => {
         fetchGameData();
     }, [user]);
 
+
+    useEffect(() => {
+        const fetchUsername = async () => {
+            if (user?.uid) {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    setUsername(userDoc.data().username);
+                }
+            }
+        };
+        fetchUsername();
+    }, [user]);
+  
     const handleDeleteGame = async (gameId) => {
         if (window.confirm('Are you sure you want to delete this game?')) {
             await deleteDoc(doc(db, 'rooms', gameId));
@@ -75,7 +90,7 @@ const ProfilePage = () => {
     }
 
     const StatCard = ({ icon, title, value }) => (
-        <Col md={3} className="mb-4">
+        <Col xs={12} sm={6} md={3} className="mb-4">
             <Card className="text-center h-100 stat-card">
                 <CardBody>
                     <div className="stat-value">{value}</div>
@@ -87,23 +102,23 @@ const ProfilePage = () => {
 
     return (
         <div className="home-background">
-        <Container className="py-5">
-            <div className="profile-info text-center mb-4">
-                <h2 className="profile-username">{user?.displayName || 'Player'}</h2>
-                <p className="user-email">
-                    <FontAwesomeIcon icon={faEnvelope} className="me-2" />
-                    {user?.email}
-                </p>
-            </div>
+            <Container fluid className="py-5">
+                <div className="profile-info text-center mb-4">
+                    <h2 className="profile-username">{username || 'Player'}</h2>
+                    <p className="user-email">
+                        <FontAwesomeIcon icon={faEnvelope} className="me-2" />
+                        {user?.email}
+                    </p>
+                </div>
 
-            <h3 className="profile-header">Game Statistics</h3>
-            
-            <Row className="mb-5">
-                <StatCard title="Games Played" value={stats.gamesPlayed} />
-                <StatCard title="Games Won" value={stats.gamesWon} />
-                <StatCard title="Win Rate" value={`${stats.winRate}%`} />
-                <StatCard title="Overall Score" value={stats.totalScore} />
-            </Row>
+                <h3 className="profile-header">Game Statistics</h3>
+
+                <Row className="mb-5">
+                    <StatCard title="Games Played" value={stats.gamesPlayed} />
+                    <StatCard title="Games Won" value={stats.gamesWon} />
+                    <StatCard title="Win Rate" value={`${stats.winRate}%`} />
+                    <StatCard title="Overall Score" value={stats.totalScore} />
+                </Row>
 
             <h3 className="profile-header">Game History</h3>
             {gameHistory.length > 0 ? (
@@ -140,4 +155,4 @@ const ProfilePage = () => {
     );
 };
 
-export default ProfilePage; 
+export default ProfilePage;

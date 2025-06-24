@@ -1,5 +1,6 @@
 // client/src/App.js
 import React from 'react';
+import './App.css';
 import { Routes, Route } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 

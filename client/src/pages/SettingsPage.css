@@ -1,7 +1,6 @@
 .settings-background {
-    background-color: #ffffff;
+    background: #fff; /* or use transparent */
     min-height: 100vh;
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 .settings-card {
@@ -67,4 +66,4 @@
 .btn-save-settings:hover {
     background-color: #5a6268;
     border-color: #545b62;
-} 
+}
