@@ -25,6 +25,8 @@ const defaultTaiSettings = {
     allHonors: 8,
 };
 
+const roundWinds = ['East (東風)', 'South (南風)', 'West (西風)', 'North (北風)'];
+
 const RecordsPage = () => {
     const { roomCode } = useParams();
     const navigate = useNavigate();
@@ -315,61 +317,94 @@ const RecordsPage = () => {
         });
     };
 
+    // Helper to count animal tiles
+    function countAnimalTai(tiles) {
+        // Assuming animal tile IDs are a1, a2, a3, a4
+        const animalIds = ['a1', 'a2', 'a3', 'a4'];
+        return tiles ? tiles.filter(t => animalIds.includes(t.id)).length : 0;
+    }
+
+    // Helper to check for matching flower
+    function hasMatchingFlower(tiles, playerWind) {
+        // Assuming flower group is 'FLOWERS' and value matches seatValueMap
+        const seatValue = seatValueMap[playerWind];
+        return tiles ? tiles.some(t => t.group === 'FLOWERS' && t.value === seatValue) : false;
+    }
+
     const handleDeclareWin = async ({ isSelfDrawn, losingPlayerId, taiValue }) => {
         const roomRef = doc(db, 'rooms', roomCode);
         let updatedPlayers = JSON.parse(JSON.stringify(room.players)); // Deep copy
-        
         const winnerIndex = updatedPlayers.findIndex(p => p.uid === currentUser.uid);
         if (winnerIndex === -1) return;
-
-        updatedPlayers[winnerIndex].gamesWon = (updatedPlayers[winnerIndex].gamesWon || 0) + 1;
-
+        // --- Add extra tai for animals and matching flower ---
+        const winner = updatedPlayers[winnerIndex];
+        const flowerTai = hasMatchingFlower(winner.flowerTiles, winner.wind) ? 1 : 0;
+        const animalTai = countAnimalTai(winner.flowerTiles);
+        const extraTai = flowerTai + animalTai;
+        const totalTai = taiValue + extraTai;
+        // --- Existing win logic, but use totalTai ---
+        winner.gamesWon = (winner.gamesWon || 0) + 1;
+        // --- Dealer and round wind logic ---
+        let dealerIndex = room.dealerIndex ?? 0;
+        let dealerRotationCount = room.dealerRotationCount ?? 0;
+        let currentWind = room.currentWind ?? 'East (東風)';
+        const eastPlayerWind = 'East (東)';
+        let nextDealerIndex = dealerIndex;
+        let nextDealerRotationCount = dealerRotationCount;
+        let nextCurrentWind = currentWind;
+        // Find current dealer (East)
+        const eastIndex = updatedPlayers.findIndex(p => p.wind === eastPlayerWind);
+        // Determine if dealer keeps position (East wins)
+        let dealerKeeps = (winnerIndex === eastIndex);
+        if (!dealerKeeps) {
+            // Dealer rotates to next player (clockwise)
+            nextDealerIndex = (dealerIndex + 1) % updatedPlayers.length;
+            nextDealerRotationCount = dealerRotationCount + 1;
+            // Rotate player winds clockwise
+            const clockwiseWinds = ['East (東)', 'South (南)', 'West (西)', 'North (北)'];
+            updatedPlayers = updatedPlayers.map(p => {
+                const idx = clockwiseWinds.indexOf(p.wind);
+                return { ...p, wind: clockwiseWinds[(idx + 1) % 4] };
+            });
+            // If all 4 have been dealer, advance round wind
+            if (nextDealerRotationCount >= 4) {
+                const windIdx = roundWinds.indexOf(currentWind);
+                nextCurrentWind = roundWinds[(windIdx + 1) % roundWinds.length]; // endless play
+                nextDealerRotationCount = 0;
+            }
+        }
+        // --- Scoring logic ---
         if (isSelfDrawn) {
-            // Self-Drawn win: Paid by all 3 opponents
-            const pointsFromEach = Math.pow(2, taiValue - 1); // e.g., 3 tai -> 2^2=4 points from each
+            const pointsFromEach = Math.pow(2, totalTai - 1);
             const totalGain = pointsFromEach * (updatedPlayers.length - 1);
-            
-            updatedPlayers[winnerIndex].score += totalGain;
+            winner.score += totalGain;
             updatedPlayers.forEach((p, index) => {
                 if (index !== winnerIndex) {
                     p.score -= pointsFromEach;
                 }
             });
         } else {
-            // Win on discard
             const loserIndex = updatedPlayers.findIndex(p => p.uid === losingPlayerId);
             if (loserIndex === -1) return;
-
-            const points = Math.pow(2, taiValue); // e.g., 3 tai -> 2^3=8 points
-            updatedPlayers[winnerIndex].score += points;
+            const points = Math.pow(2, totalTai);
+            winner.score += points;
             updatedPlayers[loserIndex].score -= points;
         }
-
-        // --- Wind Rotation Logic ---
-        const winner = updatedPlayers[winnerIndex];
-        const eastPlayerWind = 'East (東)';
-    
-        // Rotate winds ONLY if the winner is NOT East
-        if (winner.wind !== eastPlayerWind) {
-            updatedPlayers = updatedPlayers.map(p => {
-                const newWind = windRotationMap[p.wind];
-                // Defensive check to prevent undefined wind values
-                return { ...p, wind: newWind || p.wind };
-            });
-        }
-
         // Defensive check to ensure losingPlayerId is never undefined
         const finalLosingPlayerId = isSelfDrawn ? null : losingPlayerId || null;
-
         await updateDoc(roomRef, {
             players: updatedPlayers,
             status: 'lobby',
+            dealerIndex: nextDealerIndex,
+            dealerRotationCount: nextDealerRotationCount,
+            currentWind: nextCurrentWind,
             history: arrayUnion({
                 type: 'win',
                 actor: currentUser.uid,
                 isSelfDrawn,
                 losingPlayer: finalLosingPlayerId,
                 tai: taiValue,
+                extraTai,
                 timestamp: new Date(),
             })
         });

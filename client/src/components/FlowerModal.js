@@ -15,7 +15,7 @@ const TileButton = ({ tile, onSelect, isAvailable }) => (
         disabled={!isAvailable}
         style={{ cursor: isAvailable ? 'pointer' : 'not-allowed', opacity: isAvailable ? 1 : 0.6 }}
     >
-        {tile.name}
+        {tile.unicode ? `${tile.unicode} ${tile.name}` : tile.name} {tile.value ? `[${tile.value}]` : ''}
     </Button>
 );
 

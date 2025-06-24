@@ -201,25 +201,22 @@ const GameMasterPage = () => {
     }
 
     return (
-        <div className="gm-background">
-            <Container className="py-5">
-                <h2 className="gm-header"><FontAwesomeIcon icon={faCrown} /> Game Master</h2>
-                <div className="room-code-display my-4">
-                    Room Code: {roomCode}
-                </div>
-
+        <div className="gm-background" style={{ minHeight: '100vh', overflow: 'hidden' }}>
+            <Container className="py-4" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
+                <h2 className="gm-header mb-3">Game Master</h2>
+                <div className="room-code-display mb-3">Room Code: {roomCode}</div>
                 <Row>
-                    <Col md={8}>
+                    <Col md={8} style={{ overflowY: 'auto', maxHeight: '70vh' }}>
                         <h4 className="mb-3">Players in Room</h4>
                         <Row>
                             {players.map(player => (
                                 <Col md={6} key={player.uid} className="mb-4">
-                                     <Card className={`player-score-card h-100 ${player.score === highestScore ? 'highlight' : ''}`}>
+                                    <Card className={`player-score-card h-100 ${player.score === highestScore ? 'highlight' : ''}`}>
                                         <CardBody className="text-center d-flex flex-column justify-content-center">
                                             <div className="wind-indicator">{player.wind || 'Choosing...'}</div>
                                             <div className="player-name mt-2">{player.name}</div>
                                             <div className="player-score my-1">{player.score > 0 ? '+' : ''}{player.score}</div>
-                                             <small className="text-muted mt-auto">
+                                            <small className="text-muted mt-auto">
                                                 Wind: {player.wind.split(' ')[0]} | Games Won: {player.gamesWon || 0}
                                                 {player.gamesWon === mostWins && mostWins !== -1 && <FontAwesomeIcon icon={faTrophy} className="ms-2 text-warning" />}
                                             </small>
@@ -227,7 +224,7 @@ const GameMasterPage = () => {
                                     </Card>
                                 </Col>
                             ))}
-                             {players.length < 4 && Array.from({ length: 4 - players.length }).map((_, index) => (
+                            {players.length < 4 && Array.from({ length: 4 - players.length }).map((_, index) => (
                                 <Col md={6} key={`placeholder-${index}`} className="mb-4">
                                     <Card className="player-score-card h-100">
                                         <CardBody className="text-center d-flex align-items-center justify-content-center">
@@ -235,10 +232,10 @@ const GameMasterPage = () => {
                                         </CardBody>
                                     </Card>
                                 </Col>
-                             ))}
+                            ))}
                         </Row>
                     </Col>
-                    <Col md={4}>
+                    <Col md={4} style={{ overflowY: 'auto', maxHeight: '70vh' }}>
                         <h4 className="mb-3">Game Controls</h4>
                         {isPlayerInRoom && !userWind && (
                             <Dropdown isOpen={dropdownOpen} toggle={toggleDropdown} className="w-100 mb-3">
@@ -247,7 +244,7 @@ const GameMasterPage = () => {
                                 </DropdownToggle>
                                 <DropdownMenu>
                                     {availableWinds.map(wind => (
-                                         <DropdownItem key={wind} onClick={() => handleWindSelection(wind)}>{wind}</DropdownItem>
+                                        <DropdownItem key={wind} onClick={() => handleWindSelection(wind)}>{wind}</DropdownItem>
                                     ))}
                                     {availableWinds.length === 0 && <DropdownItem disabled>All winds taken</DropdownItem>}
                                 </DropdownMenu>

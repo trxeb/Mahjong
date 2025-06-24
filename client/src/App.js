@@ -12,7 +12,6 @@ import GameMasterPage from './pages/GameMasterPage';
 import RecordsPage from './pages/RecordsPage';
 import ScorePage from './pages/ScorePage';
 import ProfilePage from './pages/ProfilePage';
-import SettingsPage from './pages/SettingsPage';
 
 // Shared Components
 import SideBar from './components/SideBar';
@@ -41,7 +40,6 @@ const App = () => {
           <Route path="/records/:roomCode" element={<ProtectedRoute><RecordsPage /></ProtectedRoute>} />
           <Route path="/score/:roomCode" element={<ProtectedRoute><ScorePage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
           {/* Fallback route */}
           <Route path="*" element={<ProtectedRoute><Home /></ProtectedRoute>} />
