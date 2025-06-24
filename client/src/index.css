@@ -104,3 +104,8 @@ code {
 .gm-background {
   background: #f5f0e1 !important; /* Match your global beige */
 }
+
+.score-background {
+  background: #f5f0e1 !important; /* Beige */
+  min-height: 100vh;
+}
