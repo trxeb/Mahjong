@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Badge } from 'reactstrap';
 import { ALL_PLAYING_TILES, SUITS, HONORS } from '../constants/mahjong';
+import { detectBestPattern } from '../constants/mahjong';
 import './SelectWinTilesModal.css';
 
 const TILE_LIMIT = 14;
@@ -54,24 +55,17 @@ const SelectWinTilesModal = ({ isOpen, toggle, onConfirm }) => {
     };
     
     const calculateTai = (hand) => {
-        // Placeholder: Basic "All Pungs" check
+        // Use the robust pattern detection
         if (hand.length === TILE_LIMIT) {
-            const counts = hand.reduce((acc, tile) => {
-                acc[tile.id] = (acc[tile.id] || 0) + 1;
-                return acc;
-            }, {});
-            
-            const sets = Object.values(counts);
-            const isAllPungs = sets.every(count => count === 3 || count === 2) && sets.filter(c => c === 2).length === 1;
-
-            if (isAllPungs) return 2; // Return 2 Tai for All Pungs
+            const { pattern, tai } = detectBestPattern(hand);
+            return { pattern, tai };
         }
-        return 1; // Default to 1 Tai
+        return { pattern: 'Incomplete Hand', tai: 0 };
     };
 
     const handleConfirm = () => {
-        const tai = calculateTai(selectedTiles);
-        onConfirm(selectedTiles, tai);
+        const { pattern, tai } = calculateTai(selectedTiles);
+        onConfirm(selectedTiles, tai, pattern);
         toggle();
     };
 
