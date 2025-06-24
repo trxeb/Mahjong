@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Badge } from 'reactstrap';
 import { ALL_PLAYING_TILES, SUITS, HONORS } from '../constants/mahjong';
-import { detectBestPattern } from '../constants/mahjong';
+import { detectBestPattern, countWindTai } from '../constants/mahjong';
 import './SelectWinTilesModal.css';
 
 const TILE_LIMIT = 14;
@@ -29,7 +29,7 @@ const TileSection = ({ title, tiles, onTileClick, selectedCounts }) => (
     </div>
 );
 
-const SelectWinTilesModal = ({ isOpen, toggle, onConfirm }) => {
+const SelectWinTilesModal = ({ isOpen, toggle, onConfirm, playerWind, tableWind }) => {
     const [selectedTiles, setSelectedTiles] = useState([]);
 
     const handleTileClick = (tile) => {
@@ -58,14 +58,16 @@ const SelectWinTilesModal = ({ isOpen, toggle, onConfirm }) => {
         // Use the robust pattern detection
         if (hand.length === TILE_LIMIT) {
             const { pattern, tai } = detectBestPattern(hand);
-            return { pattern, tai };
+            // Add wind tai
+            const windTai = countWindTai(hand, playerWind, tableWind);
+            return { pattern, tai: tai + windTai, windTai };
         }
-        return { pattern: 'Incomplete Hand', tai: 0 };
+        return { pattern: 'Incomplete Hand', tai: 0, windTai: 0 };
     };
 
     const handleConfirm = () => {
-        const { pattern, tai } = calculateTai(selectedTiles);
-        onConfirm(selectedTiles, tai, pattern);
+        const { pattern, tai, windTai } = calculateTai(selectedTiles);
+        onConfirm(selectedTiles, tai, pattern, windTai);
         toggle();
     };
 

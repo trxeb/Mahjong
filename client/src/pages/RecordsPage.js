@@ -341,7 +341,7 @@ const RecordsPage = () => {
         return tiles ? tiles.some(t => t.group === 'FLOWERS' && t.value === seatValue) : false;
     }
 
-    const handleDeclareWin = async ({ isSelfDrawn, losingPlayerId, taiValue }) => {
+    const handleDeclareWin = async ({ isSelfDrawn, losingPlayerId, taiValue, windTai }) => {
         const roomRef = doc(db, 'rooms', roomCode);
         let updatedPlayers = JSON.parse(JSON.stringify(room.players)); // Deep copy
         const winnerIndex = updatedPlayers.findIndex(p => p.uid === currentUser.uid);
@@ -350,7 +350,7 @@ const RecordsPage = () => {
         const winner = updatedPlayers[winnerIndex];
         const flowerTai = hasMatchingFlower(winner.flowerTiles, winner.wind) ? 1 : 0;
         const animalTai = countAnimalTai(winner.flowerTiles);
-        const extraTai = flowerTai + animalTai;
+        const extraTai = flowerTai + animalTai + (windTai || 0);
         const totalTai = taiValue + extraTai;
         // --- Existing win logic, but use totalTai ---
         winner.gamesWon = (winner.gamesWon || 0) + 1;
@@ -376,6 +376,13 @@ const RecordsPage = () => {
                 const idx = clockwiseWinds.indexOf(p.wind);
                 return { ...p, wind: clockwiseWinds[(idx + 1) % 4] };
             });
+            // Re-apply winner's updated score and gamesWon
+            const winnerUid = currentUser.uid;
+            const winnerInArray = updatedPlayers.find(p => p.uid === winnerUid);
+            if (winnerInArray) {
+                winnerInArray.score = winner.score;
+                winnerInArray.gamesWon = winner.gamesWon;
+            }
             // If all 4 have been dealer, advance round wind
             if (nextDealerRotationCount >= 4) {
                 const windIdx = roundWinds.indexOf(currentWind);
@@ -385,7 +392,8 @@ const RecordsPage = () => {
         }
         // --- Scoring logic ---
         if (isSelfDrawn) {
-            const pointsFromEach = Math.pow(2, totalTai - 1);
+            // Each other player pays the winner tai points
+            const pointsFromEach = totalTai;
             const totalGain = pointsFromEach * (updatedPlayers.length - 1);
             winner.score += totalGain;
             updatedPlayers.forEach((p, index) => {
@@ -396,7 +404,8 @@ const RecordsPage = () => {
         } else {
             const loserIndex = updatedPlayers.findIndex(p => p.uid === losingPlayerId);
             if (loserIndex === -1) return;
-            const points = Math.pow(2, totalTai);
+            // Only the discarder pays the winner tai points
+            const points = totalTai;
             winner.score += points;
             updatedPlayers[loserIndex].score -= points;
         }
