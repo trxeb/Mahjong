@@ -182,6 +182,22 @@ const GameMasterPage = () => {
         }
     };
     
+    const handleResetAllScores = async () => {
+        if (!roomCode) return;
+        try {
+            const roomRef = doc(db, 'rooms', roomCode);
+            await updateDoc(roomRef, {
+                players: players.map(player => ({
+                    ...player,
+                    score: 0
+                }))
+            });
+        } catch (error) {
+            console.error('Failed to reset scores:', error);
+            // Optionally show an error message to the user
+        }
+    };
+
     const toggleDropdown = () => setDropdownOpen(prevState => !prevState);
     const toggleConfirmEndModal = () => setConfirmEndModalOpen(!confirmEndModalOpen);
 
@@ -253,7 +269,7 @@ const GameMasterPage = () => {
                         <Button className="w-100 mb-2 gm-btn" disabled={!canStartGame} onClick={handleStartRound}>
                             <FontAwesomeIcon icon={faPlayCircle} /> Start New Round
                         </Button>
-                        <Button className="w-100 mb-2 gm-btn-alt">
+                        <Button className="w-100 mb-2 gm-btn-alt" onClick={handleResetAllScores}>
                             <FontAwesomeIcon icon={faSync} /> Reset All Scores
                         </Button>
                         {roomData?.gameMaster === currentUser?.uid && (

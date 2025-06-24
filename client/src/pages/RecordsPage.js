@@ -598,7 +598,7 @@ const RecordsPage = () => {
                                 <FontAwesomeIcon icon={faPlus} className="me-2" /> Add Flower
                             </Button>
                         </ActionCard>
-                        <ActionCard title="Record Kong">
+                        <ActionCard title="Record Gang">
                             <Input 
                                 type="select" 
                                 value={selectedKongType} 
@@ -636,7 +636,7 @@ const RecordsPage = () => {
                                 </Input>
                             )}
                             <Button className="btn-declare-win" onClick={handleRecordKong} block>
-                                <FontAwesomeIcon icon={faClipboard} className="me-2" /> Record Kong
+                                <FontAwesomeIcon icon={faClipboard} className="me-2" /> Record Gang
                             </Button>
                         </ActionCard>
                     </Row>
