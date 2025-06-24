@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, arrayUnion, setDoc } from 'firebase/firestore';
 import { db } from '../firebase-config';
 import { useAuth } from '../hooks/useAuth';
 import FlowerModal from '../components/FlowerModal';
@@ -15,6 +15,14 @@ const windRotationMap = {
     'South (南)': 'East (東)',
     'West (西)': 'South (南)',
     'North (北)': 'West (西)',
+};
+
+const defaultTaiSettings = {
+    baseWin: 1,
+    selfDraw: 1,
+    allPungs: 2,
+    pureSuit: 8,
+    allHonors: 8,
 };
 
 const RecordsPage = () => {
@@ -32,6 +40,10 @@ const RecordsPage = () => {
     const [winModalOpen, setWinModalOpen] = useState(false);
     const [winnerModalOpen, setWinnerModalOpen] = useState(false);
     const [gameWinner, setGameWinner] = useState(null);
+    const [taiSettings, setTaiSettings] = useState(defaultTaiSettings);
+    const [taiForm, setTaiForm] = useState(defaultTaiSettings);
+    const [taiLoading, setTaiLoading] = useState(true);
+    const [isMingGangSelfDrawn, setIsMingGangSelfDrawn] = useState(false);
 
     useEffect(() => {
         if (!roomCode) return;
@@ -42,6 +54,10 @@ const RecordsPage = () => {
                 setRoomExists(true);
                 const roomData = docSnap.data();
                 setRoom(roomData);
+                const newTai = roomData.taiSettings || defaultTaiSettings;
+                setTaiSettings(newTai);
+                setTaiForm(newTai);
+                setTaiLoading(false);
 
                 if (roomData.status === 'finished') {
                     if (roomData.winner) {
@@ -184,10 +200,8 @@ const RecordsPage = () => {
 
     const handleRecordKong = async () => {
         if (!currentUser) return;
-
         const actorIndex = room.players.findIndex(p => p.uid === currentUser.uid);
         if (actorIndex === -1) return;
-        
         const updatedPlayers = [...room.players];
         let historyEntry = {
             type: 'kong',
@@ -195,27 +209,30 @@ const RecordsPage = () => {
             actor: currentUser.uid,
             timestamp: new Date(),
         };
-
         if (selectedKongType === 'Concealed Kong') {
-            // Per the rule "if you draw yourself = 2 chips", the declarer is paid by all 3 opponents.
-            // The declarer gains 6 points (2 chips * 3 players), and each opponent loses 2 points.
-            updatedPlayers[actorIndex].score += 6;
-            updatedPlayers.forEach((p, index) => {
-                if (index !== actorIndex) {
-                    updatedPlayers[index].score -= 2;
-                }
-            });
-        } else { // Melded Kong
-            // Per the rule "if someone threw it = 1 chip", the declarer is paid by the discarder.
-            // The declarer gains 1 point, and the target loses 1 point.
-            const targetIndex = room.players.findIndex(p => p.uid === selectedKongTarget);
-            if (targetIndex === -1) return;
-            
-            updatedPlayers[actorIndex].score += 1;
-            updatedPlayers[targetIndex].score -= 1;
-            historyEntry.target = selectedKongTarget;
+            // Just record the An Gang for end-of-game tai calculation
+            updatedPlayers[actorIndex].anGangCount = (updatedPlayers[actorIndex].anGangCount || 0) + 1;
+            // No immediate points
+        } else if (selectedKongType === 'Exposed Kong') {
+            if (isMingGangSelfDrawn) {
+                // All other players lose 1 tai, actor gains 3
+                updatedPlayers[actorIndex].score += 3;
+                updatedPlayers.forEach((p, index) => {
+                    if (index !== actorIndex) {
+                        updatedPlayers[index].score -= 1;
+                    }
+                });
+                historyEntry.isSelfDrawn = true;
+            } else {
+                // Only discarder loses 1 tai, actor gains 1
+                const targetIndex = room.players.findIndex(p => p.uid === selectedKongTarget);
+                if (targetIndex === -1) return;
+                updatedPlayers[actorIndex].score += 1;
+                updatedPlayers[targetIndex].score -= 1;
+                historyEntry.target = selectedKongTarget;
+                historyEntry.isSelfDrawn = false;
+            }
         }
-
         const roomRef = doc(db, 'rooms', roomCode);
         await updateDoc(roomRef, {
             players: updatedPlayers,
@@ -402,6 +419,18 @@ const RecordsPage = () => {
     const toggleModal = () => setModalOpen(!modalOpen);
     const toggleWinModal = () => setWinModalOpen(!winModalOpen);
 
+    const handleTaiInputChange = (e) => {
+        const { name, value } = e.target;
+        setTaiForm(prev => ({ ...prev, [name]: Number(value) }));
+    };
+
+    const handleTaiSave = async (e) => {
+        e.preventDefault();
+        if (!roomCode) return;
+        const roomRef = doc(db, 'rooms', roomCode);
+        await updateDoc(roomRef, { taiSettings: taiForm });
+    };
+
     if (!roomExists) {
         return (
             <div className="records-background text-center py-5">
@@ -413,15 +442,15 @@ const RecordsPage = () => {
 
     const ActionCard = ({ title, children }) => (
         <Col md={4}>
-            <div className="action-section mb-3 mb-md-0">
-                <h6 className="mb-3">{title}</h6>
+            <div className="action-section mb-3 mb-md-0" style={{ background: '#f8f9fa', borderRadius: '12px', padding: '1.5rem' }}>
+                <h6 className="mb-3 text-center" style={{ fontSize: '1.3rem' }}>{title}</h6>
                 {children}
             </div>
         </Col>
     );
 
     return (
-        <div className="records-background">
+        <div className="records-background" style={{ height: '100vh', overflow: 'hidden', background: '#f5f0e6' }}>
             <FlowerModal
                 isOpen={modalOpen}
                 toggle={toggleModal}
@@ -452,9 +481,39 @@ const RecordsPage = () => {
                     <Button color="primary" onClick={handleCloseWinnerModalAndRedirect}>Back to Home</Button>
                 </ModalFooter>
             </Modal>
-            <Container className="py-3">
+            <Container className="py-3" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
                 <div className="records-container p-3 rounded-4">
                     <h4 className="mb-4"><FontAwesomeIcon icon={faClipboard} /> Game Records</h4>
+                    <div className="mb-4 p-3" style={{ background: '#f8f9fa', borderRadius: '8px', border: '1px solid #eee' }}>
+                        <h5 className="mb-3">Tai Value Configuration (Shared for this Game)</h5>
+                        {taiLoading ? <span>Loading...</span> : (
+                        <form onSubmit={handleTaiSave} className="row g-3 align-items-end">
+                            <div className="col-md-2">
+                                <label htmlFor="baseWin" className="form-label">平胡 (Basic Win)</label>
+                                <input type="number" className="form-control" name="baseWin" id="baseWin" value={taiForm.baseWin} onChange={handleTaiInputChange} />
+                            </div>
+                            <div className="col-md-2">
+                                <label htmlFor="selfDraw" className="form-label">自摸 (Self Draw)</label>
+                                <input type="number" className="form-control" name="selfDraw" id="selfDraw" value={taiForm.selfDraw} onChange={handleTaiInputChange} />
+                            </div>
+                            <div className="col-md-2">
+                                <label htmlFor="allPungs" className="form-label">對對胡 (All Pungs)</label>
+                                <input type="number" className="form-control" name="allPungs" id="allPungs" value={taiForm.allPungs} onChange={handleTaiInputChange} />
+                            </div>
+                            <div className="col-md-2">
+                                <label htmlFor="pureSuit" className="form-label">清一色 (Pure Suit)</label>
+                                <input type="number" className="form-control" name="pureSuit" id="pureSuit" value={taiForm.pureSuit} onChange={handleTaiInputChange} />
+                            </div>
+                            <div className="col-md-2">
+                                <label htmlFor="allHonors" className="form-label">字一色 (All Honors)</label>
+                                <input type="number" className="form-control" name="allHonors" id="allHonors" value={taiForm.allHonors} onChange={handleTaiInputChange} />
+                            </div>
+                            <div className="col-md-2 d-grid">
+                                <button type="submit" className="btn btn-secondary">Save</button>
+                            </div>
+                        </form>
+                        )}
+                    </div>
                     <Row>
                         <ActionCard title="Declare Win">
                             <Button className="btn-declare-win" onClick={toggleWinModal} block>
@@ -462,7 +521,7 @@ const RecordsPage = () => {
                             </Button>
                         </ActionCard>
                         <ActionCard title="Add Flower">
-                            <Button className="btn-record-action" onClick={toggleModal} block>
+                            <Button className="btn-declare-win" onClick={toggleModal} block>
                                 <FontAwesomeIcon icon={faPlus} className="me-2" /> Add Flower
                             </Button>
                         </ActionCard>
@@ -470,18 +529,32 @@ const RecordsPage = () => {
                             <Input 
                                 type="select" 
                                 value={selectedKongType} 
-                                onChange={(e) => setSelectedKongType(e.target.value)}
+                                onChange={e => {
+                                    setSelectedKongType(e.target.value);
+                                    if (e.target.value !== 'Exposed Kong') setIsMingGangSelfDrawn(false);
+                                }}
                                 className="mb-2"
                             >
-                                <option>Concealed Kong</option>
-                                <option>Exposed Kong</option>
-                                <option>Melded Kong</option>
+                                <option value="Concealed Kong">暗槓 (An Gang)</option>
+                                <option value="Exposed Kong">明槓 (Ming Gang)</option>
                             </Input>
-                            {selectedKongType !== 'Concealed Kong' && (
+                            {selectedKongType === 'Exposed Kong' && (
+                                <div className="mb-2">
+                                    <Input
+                                        type="checkbox"
+                                        id="mingGangSelfDrawn"
+                                        checked={isMingGangSelfDrawn}
+                                        onChange={e => setIsMingGangSelfDrawn(e.target.checked)}
+                                        style={{ marginRight: '0.5rem' }}
+                                    />
+                                    <label htmlFor="mingGangSelfDrawn">Self-drawn (加槓 Gong)</label>
+                                </div>
+                            )}
+                            {selectedKongType === 'Exposed Kong' && !isMingGangSelfDrawn && (
                                 <Input 
                                     type="select" 
                                     value={selectedKongTarget} 
-                                    onChange={(e) => setSelectedKongTarget(e.target.value)}
+                                    onChange={e => setSelectedKongTarget(e.target.value)}
                                     className="mb-2"
                                 >
                                     {players.filter(p => p.uid !== currentUser?.uid).map(p => (
@@ -489,7 +562,7 @@ const RecordsPage = () => {
                                     ))}
                                 </Input>
                             )}
-                            <Button className="btn-record-action" onClick={handleRecordKong} block>
+                            <Button className="btn-declare-win" onClick={handleRecordKong} block>
                                 <FontAwesomeIcon icon={faClipboard} className="me-2" /> Record Kong
                             </Button>
                         </ActionCard>
@@ -497,8 +570,8 @@ const RecordsPage = () => {
                     
                     <div className="mt-4">
                         <h6 className="mb-3">Other Actions</h6>
-                        <Button className="btn-record-action me-2" onClick={handleUndoLastAction}><FontAwesomeIcon icon={faUndo} /> Undo Last Action</Button>
-                        <Button className="btn-record-action" onClick={handleDeclareDraw}><FontAwesomeIcon icon={faHandshake} /> Declare Draw</Button>
+                        <Button className="btn-declare-win me-2" onClick={handleUndoLastAction}><FontAwesomeIcon icon={faUndo} /> Undo Last Action</Button>
+                        <Button className="btn-declare-win" onClick={handleDeclareDraw}><FontAwesomeIcon icon={faHandshake} /> Declare Draw</Button>
                     </div>
                 </div>
 
