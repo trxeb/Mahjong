@@ -189,7 +189,8 @@ const GameMasterPage = () => {
             await updateDoc(roomRef, {
                 players: players.map(player => ({
                     ...player,
-                    score: 0
+                    score: 0,
+                    gamesWon: 0 // <-- Reset gamesWon as well
                 }))
             });
         } catch (error) {
