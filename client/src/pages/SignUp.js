@@ -77,7 +77,7 @@ const SignUp = () => {
             <Card className="p-4 p-md-5 w-100" style={{ maxWidth: '400px' }}>
                 <div className="text-center mb-4">
                     <img
-                        src="/logo_white.jpg"
+                        src="/logo_white.png"
                         alt="Tai-ny Calculator Logo"
                         className="img-fluid mb-3"
                         style={{ maxWidth: '250px', height: 'auto', borderRadius: '15px'}} //boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
@@ -136,8 +136,12 @@ const SignUp = () => {
                 </Form>
 
                 <div className="text-center">
-                    <Link to="/login" className="btn btn-link text-muted text-decoration-none fw-normal p-0" style={{ fontSize: '0.875rem' }}>
-                        Already have an account? Log In
+                    <Link
+                      to="/login"
+                      className="btn btn-link text-decoration-none fw-normal p-0"
+                      style={{ fontSize: '0.875rem' }}
+                    >
+                      Already have an account? Log In
                     </Link>
                 </div>
             </Card>
