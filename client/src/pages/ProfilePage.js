@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, deleteDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase-config';
 import { useAuth } from '../hooks/useAuth';
 import { Container, Row, Col, Card, CardHeader, CardBody, CardTitle, CardText, Spinner, Button } from 'reactstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrophy, faChartLine, faPercentage, faPlusMinus, faEnvelope } from '@fortawesome/free-solid-svg-icons';
-import { doc, getDoc } from 'firebase/firestore';
-import './ProfilePage.css';
+import { faTrophy, faChartLine, faPercentage, faPlusMinus, faEnvelope, faTrash } from '@fortawesome/free-solid-svg-icons';import './ProfilePage.css';
 
 const ProfilePage = () => {
     const { user } = useAuth();
