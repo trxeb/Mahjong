@@ -54,7 +54,7 @@ const ScorePage = () => {
     return (
         <div className="score-background">
             <Container className="py-5">
-                 <h2 className="text-center mb-2">Room Code: {roomCode}</h2>
+                <h2 className="text-center mb-2">Room Code: {roomCode}</h2>
                 <h1 className="text-center mb-5"><FontAwesomeIcon icon={faTrophy} /> Current Scores</h1>
                 <Row>
                     {players.map(player => (
