@@ -29,7 +29,6 @@ const SideBar = () => {
   const navItems = [
     { to: '/', label: 'Home', icon: faHome, exact: true },
     { to: '/profile', label: 'Profile', icon: faUserCircle },
-    { to: '/settings', label: 'Settings', icon: faCog },
     { to: lastRoomCode ? `/gamemaster/${lastRoomCode}` : '#', label: 'GM Page', icon: faChessKing, disabled: !lastRoomCode },
     { to: lastRoomCode ? `/records/${lastRoomCode}` : '#', label: 'Records', icon: faClipboardList, disabled: !lastRoomCode },
     { to: lastRoomCode ? `/score/${lastRoomCode}`: '#', label: 'Score', icon: faTrophy, disabled: !lastRoomCode }

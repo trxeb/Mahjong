@@ -56,6 +56,9 @@ const Home = () => {
         status: 'lobby',
         availableFlowerTiles: ALL_FLOWER_TILES,
         history: [],
+        currentWind: 'East (東風)',
+        dealerIndex: 0,
+        dealerRotationCount: 0,
       });
       // Navigate to the Game Master page with the new room code
       navigate(`/gamemaster/${roomCode}`);
