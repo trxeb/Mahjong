@@ -184,3 +184,33 @@ export function detectBestPattern(hand, playerWind, tableWind, flowers, animals)
   }
   return { pattern: 'Basic Win', tai: 1 };
 }
+
+// Returns extra tai for pongs/kongs of seat wind and prevailing wind
+export function countWindTai(hand, playerWind, tableWind) {
+  // Acceptable wind tile ids: 'E', 'S', 'W', 'N'
+  // playerWind: e.g. 'East (東)', tableWind: e.g. 'East (東風)'
+  const windMap = {
+    'East (東)': 'E',
+    'South (南)': 'S',
+    'West (西)': 'W',
+    'North (北)': 'N',
+    'East (東風)': 'E',
+    'South (南風)': 'S',
+    'West (西風)': 'W',
+    'North (北風)': 'N',
+  };
+  const seatWindId = windMap[playerWind];
+  const tableWindId = windMap[tableWind];
+  // Count pongs/kongs of each wind
+  const counts = { E: 0, S: 0, W: 0, N: 0 };
+  hand.forEach(tile => {
+    if (counts.hasOwnProperty(tile.id)) {
+      counts[tile.id]++;
+    }
+  });
+  let tai = 0;
+  // Pong/kong = 3 or 4 of a wind
+  if (seatWindId && counts[seatWindId] >= 3) tai++;
+  if (tableWindId && counts[tableWindId] >= 3) tai++;
+  return tai;
+}

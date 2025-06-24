@@ -8,6 +8,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
 import SelectWinTilesModal from './SelectWinTilesModal';
+import { detectBestPattern, countWindTai } from '../constants/mahjong';
 
 const handTypes = [
   // Basic Combinations
@@ -34,8 +35,13 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
   const [handType, setHandType] = useState('Custom Tai');
   const [isTilesModalOpen, setIsTilesModalOpen] = useState(false);
   const [winningHand, setWinningHand] = useState([]);
+  const [windTai, setWindTai] = useState(0);
+  const [seatWindTaiChecked, setSeatWindTaiChecked] = useState(false);
+  const [roundWindTaiChecked, setRoundWindTaiChecked] = useState(false);
 
   const winner = players.find(p => p.uid === currentUser?.uid);
+  const playerWind = winner?.wind;
+  const tableWind = room?.currentWind;
 
   useEffect(() => {
     const selectedHand = handTypes.find(h => h.name === handType);
@@ -57,11 +63,31 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
     }
   }, [isSelfDrawn, players, currentUser, losingPlayerId]);
 
+  useEffect(() => {
+    // If using Select Tiles, auto-fill and lock wind tai checkboxes
+    if (handType === 'Hand from Tiles') {
+      // Use windTai to set checkboxes
+      if (playerWind && tableWind) {
+        setSeatWindTaiChecked(windTai > 0 && countWindTai(winningHand, playerWind, null) > 0);
+        setRoundWindTaiChecked(windTai > 0 && countWindTai(winningHand, null, tableWind) > 0);
+      }
+    } else {
+      setSeatWindTaiChecked(false);
+      setRoundWindTaiChecked(false);
+    }
+  }, [handType, windTai, winningHand, playerWind, tableWind]);
+
   const handleSubmit = () => {
+    let manualWindTai = 0;
+    if (handType !== 'Hand from Tiles') {
+      if (seatWindTaiChecked) manualWindTai += 1;
+      if (roundWindTaiChecked) manualWindTai += 1;
+    }
     onDeclare({
       isSelfDrawn,
       losingPlayerId: isSelfDrawn ? null : losingPlayerId,
-      taiValue
+      taiValue,
+      windTai: handType === 'Hand from Tiles' ? windTai : manualWindTai
     });
     toggle(); // Close the modal after submitting
   };
@@ -72,9 +98,10 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
 
   const toggleTilesModal = () => setIsTilesModalOpen(!isTilesModalOpen);
 
-  const handleHandConfirm = (hand, calculatedTai, detectedPattern) => {
+  const handleHandConfirm = (hand, calculatedTai, detectedPattern, windTai) => {
     setWinningHand(hand);
     setTaiValue(calculatedTai);
+    setWindTai(windTai || 0);
     // Try to match detectedPattern to a handType
     const match = handTypes.find(h => detectedPattern && detectedPattern.startsWith(h.name));
     if (match) {
@@ -84,6 +111,18 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
     } else {
       setHandType('Hand from Tiles');
     }
+  };
+
+  const getTotalTai = () => {
+    let baseTai = taiValue;
+    let extra = 0;
+    if (handType === 'Hand from Tiles') {
+      extra = windTai;
+    } else {
+      if (seatWindTaiChecked) extra += 1;
+      if (roundWindTaiChecked) extra += 1;
+    }
+    return baseTai + extra;
   };
 
   return (
@@ -133,6 +172,19 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
                 )}
               </Input>
             </FormGroup>
+            {/* Wind Tai checkboxes */}
+            <FormGroup check className="mb-2">
+              <Label check>
+                <Input type="checkbox" checked={seatWindTaiChecked} onChange={() => setSeatWindTaiChecked(v => !v)} disabled={handType === 'Hand from Tiles'} />
+                +1 Tai for Pong/Kong of My Seat Wind
+              </Label>
+            </FormGroup>
+            <FormGroup check className="mb-2">
+              <Label check>
+                <Input type="checkbox" checked={roundWindTaiChecked} onChange={() => setRoundWindTaiChecked(v => !v)} disabled={handType === 'Hand from Tiles'} />
+                +1 Tai for Pong/Kong of Prevailing Wind
+              </Label>
+            </FormGroup>
             {handType === 'Custom Tai' ? (
               <FormGroup>
                 <Label>Custom Tai Value</Label>
@@ -152,6 +204,13 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
                 <Input type="text" value={`${taiValue} Tai`} disabled />
               </FormGroup>
             )}
+            {windTai > 0 && (
+              <div className="mb-2 text-success">+{windTai} Tai for Wind Pongs/Kongs</div>
+            )}
+            <FormGroup>
+              <Label>Total Tai</Label>
+              <Input type="text" value={`${getTotalTai()} Tai`} disabled />
+            </FormGroup>
           </Form>
         </ModalBody>
         <ModalFooter className="win-modal-footer">
@@ -165,6 +224,8 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
         isOpen={isTilesModalOpen}
         toggle={toggleTilesModal}
         onConfirm={handleHandConfirm}
+        playerWind={playerWind}
+        tableWind={tableWind}
       />
     </>
   );

@@ -100,56 +100,58 @@ const ProfilePage = () => {
     );
 
     return (
-        <div className="home-background">
-            <Container fluid className="py-5">
-                <div className="profile-info text-center mb-4">
-                    <h2 className="profile-username">{username || 'Player'}</h2>
-                    <p className="user-email">
-                        <FontAwesomeIcon icon={faEnvelope} className="me-2" />
-                        {user?.email}
-                    </p>
-                </div>
+        <div className="profile-background" style={{ minHeight: '100vh', background: '#f5f0e6', overflow: 'hidden' }}>
+            <div className="profile-container" style={{ maxHeight: '90vh', overflowY: 'auto', padding: '2rem' }}>
+                <Container fluid className="py-5">
+                    <div className="profile-info text-center mb-4">
+                        <h2 className="profile-username">{username || 'Player'}</h2>
+                        <p className="user-email">
+                            <FontAwesomeIcon icon={faEnvelope} className="me-2" />
+                            {user?.email}
+                        </p>
+                    </div>
 
-                <h3 className="profile-header">Game Statistics</h3>
+                    <h3 className="profile-header">Game Statistics</h3>
 
-                <Row className="mb-5">
-                    <StatCard title="Games Played" value={stats.gamesPlayed} />
-                    <StatCard title="Games Won" value={stats.gamesWon} />
-                    <StatCard title="Win Rate" value={`${stats.winRate}%`} />
-                    <StatCard title="Overall Score" value={stats.totalScore} />
-                </Row>
+                    <Row className="mb-5">
+                        <StatCard title="Games Played" value={stats.gamesPlayed} />
+                        <StatCard title="Games Won" value={stats.gamesWon} />
+                        <StatCard title="Win Rate" value={`${stats.winRate}%`} />
+                        <StatCard title="Overall Score" value={stats.totalScore} />
+                    </Row>
 
-            <h3 className="profile-header">Game History</h3>
-            {gameHistory.length > 0 ? (
-                <ul style={{ listStyle: 'none', padding: 0 }}>
-                    {gameHistory.map(game => (
-                        <li key={game.id} className="game-history-card d-flex align-items-center mb-3">
-                            <div style={{ flex: 1 }}>
-                                <div>
-                                    <strong>Room:</strong> {game.roomCode || game.id}
-                                </div>
-                                <div>
-                                    <strong>Date:</strong> {game.finishedAt ? new Date(game.finishedAt.seconds * 1000).toLocaleDateString() : 'Date not available'}
-                                    <span className="ms-3"><strong>Winner:</strong> {game.winner?.name || 'N/A'}</span>
-                                </div>
-                                <div className="mt-2" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-                                    {game.players.map(p => (
-                                        <span key={p.uid} style={{ minWidth: '120px', display: 'inline-block' }}>
-                                            <strong>{p.name}:</strong> {p.score > 0 ? '+' : ''}{p.score}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                            <Button color="link" className="p-0 ms-2" style={{ color: '#888' }} onClick={() => handleDeleteGame(game.id)}>
-                                <FontAwesomeIcon icon={faTrash} size="lg" />
-                            </Button>
-                        </li>
-                    ))}
-                </ul>
-            ) : (
-                <p>No completed games found.</p>
-            )}
-        </Container>
+                    <h3 className="profile-header">Game History</h3>
+                    {gameHistory.length > 0 ? (
+                        <ul style={{ listStyle: 'none', padding: 0 }}>
+                            {gameHistory.map(game => (
+                                <li key={game.id} className="game-history-card d-flex align-items-center mb-3">
+                                    <div style={{ flex: 1 }}>
+                                        <div>
+                                            <strong>Room:</strong> {game.roomCode || game.id}
+                                        </div>
+                                        <div>
+                                            <strong>Date:</strong> {game.finishedAt ? new Date(game.finishedAt.seconds * 1000).toLocaleDateString() : 'Date not available'}
+                                            <span className="ms-3"><strong>Winner:</strong> {game.winner?.name || 'N/A'}</span>
+                                        </div>
+                                        <div className="mt-2" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+                                            {game.players.map(p => (
+                                                <span key={p.uid} style={{ minWidth: '120px', display: 'inline-block' }}>
+                                                    <strong>{p.name}:</strong> {p.score > 0 ? '+' : ''}{p.score}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <Button color="link" className="p-0 ms-2" style={{ color: '#888' }} onClick={() => handleDeleteGame(game.id)}>
+                                        <FontAwesomeIcon icon={faTrash} size="lg" />
+                                    </Button>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p>No completed games found.</p>
+                    )}
+                </Container>
+            </div>
         </div>
     );
 };
