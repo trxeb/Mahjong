@@ -103,7 +103,14 @@ code {
 
 .gm-background {
   background: #f5f0e1 !important; /* Match your global beige */
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
 }
+
+
 
 .score-background {
   background: #f5f0e1 !important; /* Beige */
