@@ -53,7 +53,7 @@ export const HONORS = {
         { id: 'N', 'name': 'North Wind', name_zh: '北', suit: 'Wind', value: 'N', unicode: '🀃' },
     ],
     DRAGONS: [
-        { id: 'Red', name: 'Red Dragon (中)', name_zh: '中', suit: 'Dragon', value: 'Red', unicode: '🀄' },
+        { id: 'Red', name: 'Red Dragon (中)', name_zh: '中', suit: 'Dragon', value: 'Red', unicode: '🀄︎' },
         { id: 'Green', name: 'Green Dragon (發)', name_zh: '發', suit: 'Dragon', value: 'Green', unicode: '🀅' },
         { id: 'White', name: 'White Dragon (白)', name_zh: '白', suit: 'Dragon', value: 'White', unicode: '🀆' },
     ]
