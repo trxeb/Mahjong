@@ -31,6 +31,7 @@ const TileSection = ({ title, tiles, onTileClick, selectedCounts }) => (
 
 const SelectWinTilesModal = ({ isOpen, toggle, onConfirm, playerWind, tableWind }) => {
     const [selectedTiles, setSelectedTiles] = useState([]);
+    const [error, setError] = useState('');
 
     const handleTileClick = (tile) => {
         setSelectedTiles(currentTiles => {
@@ -66,6 +67,15 @@ const SelectWinTilesModal = ({ isOpen, toggle, onConfirm, playerWind, tableWind 
 
     const handleConfirm = () => {
         const { pattern, tai, windTai } = calculateTai(selectedTiles);
+        if (selectedTiles.length < TILE_LIMIT) {
+            setError('Please select 14 tiles for a complete hand.');
+            return;
+        }
+        if (pattern === 'Incomplete Hand' || tai === 0) {
+            setError('The selected tiles do not form a valid winning pattern.');
+            return;
+        }
+        setError('');
         onConfirm(selectedTiles, tai, pattern, windTai);
         toggle();
     };
@@ -81,6 +91,7 @@ const SelectWinTilesModal = ({ isOpen, toggle, onConfirm, playerWind, tableWind 
                 <span className="red-dragon-icon">中</span> Select Your Tiles
             </ModalHeader>
             <ModalBody>
+                {error && <div className="alert alert-danger" role="alert">{error}</div>}
                 <div className="selected-hand-display mb-3">
                     {selectedTiles.length > 0 ? selectedTiles.map((tile, index) => (
                         <Tile key={`${tile.id}-${index}`} tile={tile} onClick={() => handleRemoveTile(tile)} count={0} />
@@ -96,7 +107,7 @@ const SelectWinTilesModal = ({ isOpen, toggle, onConfirm, playerWind, tableWind 
                 <div className="w-100 d-flex justify-content-between align-items-center">
                     <span className="selected-tiles-count">Selected Tiles: {selectedTiles.length}/{TILE_LIMIT}</span>
                     <div>
-                        <Button className="btn-clear-all me-2" onClick={() => setSelectedTiles([])}>
+                        <Button className="btn-clear-all me-2" onClick={() => { setSelectedTiles([]); setError(''); }}>
                             Clear All
                         </Button>
                         <Button className="btn-auto-calc" onClick={handleConfirm} disabled={selectedTiles.length < TILE_LIMIT}>
