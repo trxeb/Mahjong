@@ -158,20 +158,193 @@ const patterns = [
       return isPingHu(hand) && ((flowers && flowers.length > 0) || (animals && animals.length > 0));
     }
   },
+  {
+    name: 'Mixed (Chows and Pungs)',
+    tai: 0,
+    detect: (hand) => isMixedHand(hand)
+  },
 ];
 
 // Helper: Pong Pong (All Pungs)
 function isPongPong(hand) {
+  if (hand.length !== 14) return false;
+  // Count occurrences of each tile
   const counts = {};
   hand.forEach(tile => { counts[tile.id] = (counts[tile.id] || 0) + 1; });
   const values = Object.values(counts);
-  return values.filter(v => v === 2).length === 1 && values.filter(v => v === 3).length === 4;
+  // Must have exactly 5 unique tile types: 4 pungs (3 each), 1 pair (2)
+  if (values.length !== 5) return false;
+  if (values.filter(v => v === 3).length !== 4) return false;
+  if (values.filter(v => v === 2).length !== 1) return false;
+  if (values.some(v => v > 3)) return false; // No kongs allowed
+  return true;
 }
+
+// Helper: Recursively check if the remaining tiles can form n pungs (no kongs/quads)
+function canFormPungsStrict(counts, n) {
+  if (n === 0) {
+    // All pungs formed, check if all tiles are used
+    return Object.values(counts).every(v => v === 0);
+  }
+  // Try to find a pung (3 of a kind, not 4)
+  for (const [tileId, count] of Object.entries(counts)) {
+    if (count === 3) {
+      const newCounts = { ...counts };
+      newCounts[tileId] -= 3;
+      if (canFormPungsStrict(newCounts, n - 1)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Check if any suit group contains a chow (sequence) in the remaining tiles
+function hasChowLeft(counts) {
+  const suitGroups = ['Dots', 'Bamboo', 'Characters'];
+  for (const suit of suitGroups) {
+    // Get all tile numbers for this suit
+    const nums = Object.keys(counts)
+      .filter(id => id.startsWith(suit) && counts[id] > 0)
+      .map(id => parseInt(id.replace(suit, '')))
+      .sort((a, b) => a - b);
+    // Check for any sequence of 3 consecutive numbers
+    for (let i = 0; i < nums.length - 2; i++) {
+      if (
+        counts[`${suit}${nums[i]}`] > 0 &&
+        counts[`${suit}${nums[i + 1]}`] > 0 &&
+        counts[`${suit}${nums[i + 2]}`] > 0
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 // Helper: Ping Hu (All Chows + 1 pair, no big cards in pair, no longkang wait)
 function isPingHu(hand) {
-  // This is a simplified placeholder. Real implementation requires hand parsing.
-  // For now, just check for 4 chows and a pair, and no big cards in pair.
-  // TODO: Implement full hand parser for chows.
+  if (hand.length !== 14) return false;
+  // Count occurrences of each tile
+  const counts = {};
+  hand.forEach(tile => { counts[tile.id] = (counts[tile.id] || 0) + 1; });
+
+  // Try all possible pairs (must not be an honor tile)
+  for (const [tileId, count] of Object.entries(counts)) {
+    // Only allow pair in suits, not honors
+    if (count >= 2 && !isHonorTile(tileId)) {
+      const newCounts = { ...counts };
+      newCounts[tileId] -= 2;
+      if (canFormChowsOnly(newCounts, 4)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Helper: Recursively check if the remaining tiles can form n chows (no pungs allowed)
+function canFormChowsOnly(counts, n) {
+  if (n === 0) {
+    // All chows formed, check if all tiles are used
+    return Object.values(counts).every(v => v === 0);
+  }
+  // Only try to find a chow (no pungs)
+  const suits = ['Dots', 'Bamboo', 'Characters'];
+  for (const suit of suits) {
+    const nums = Object.keys(counts)
+      .filter(id => id.startsWith(suit) && counts[id] > 0)
+      .map(id => parseInt(id.replace(suit, '')))
+      .sort((a, b) => a - b);
+    for (let i = 0; i < nums.length - 2; i++) {
+      const n1 = nums[i], n2 = nums[i + 1], n3 = nums[i + 2];
+      if (
+        n2 === n1 + 1 && n3 === n2 + 1 &&
+        counts[`${suit}${n1}`] > 0 &&
+        counts[`${suit}${n2}`] > 0 &&
+        counts[`${suit}${n3}`] > 0
+      ) {
+        const newCounts = { ...counts };
+        newCounts[`${suit}${n1}`]--;
+        newCounts[`${suit}${n2}`]--;
+        newCounts[`${suit}${n3}`]--;
+        if (canFormChowsOnly(newCounts, n - 1)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+// Helper: Check if a tile is an honor tile (winds or dragons)
+function isHonorTile(tileId) {
+  return (
+    tileId === 'E' || tileId === 'S' || tileId === 'W' || tileId === 'N' ||
+    tileId === 'Red' || tileId === 'Green' || tileId === 'White'
+  );
+}
+
+// Helper: Mixed (Chows and Pungs, not all chows or all pungs)
+function isMixedHand(hand) {
+  if (hand.length !== 14) return false;
+  // Must not be all chows or all pungs
+  if (isPingHu(hand) || isPongPong(hand)) return false;
+  // Try all possible pairs
+  const counts = {};
+  hand.forEach(tile => { counts[tile.id] = (counts[tile.id] || 0) + 1; });
+  for (const [tileId, count] of Object.entries(counts)) {
+    if (count >= 2) {
+      const newCounts = { ...counts };
+      newCounts[tileId] -= 2;
+      if (canFormSets(newCounts, 4)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Helper: Recursively check if the remaining tiles can form n sets (chow or pung)
+function canFormSets(counts, n) {
+  if (n === 0) {
+    return Object.values(counts).every(v => v === 0);
+  }
+  // Try to find a pung
+  for (const [tileId, count] of Object.entries(counts)) {
+    if (count >= 3) {
+      const newCounts = { ...counts };
+      newCounts[tileId] -= 3;
+      if (canFormSets(newCounts, n - 1)) {
+        return true;
+      }
+    }
+  }
+  // Try to find a chow
+  const suits = ['Dots', 'Bamboo', 'Characters'];
+  for (const suit of suits) {
+    const nums = Object.keys(counts)
+      .filter(id => id.startsWith(suit) && counts[id] > 0)
+      .map(id => parseInt(id.replace(suit, '')))
+      .sort((a, b) => a - b);
+    for (let i = 0; i < nums.length - 2; i++) {
+      const n1 = nums[i], n2 = nums[i + 1], n3 = nums[i + 2];
+      if (
+        n2 === n1 + 1 && n3 === n2 + 1 &&
+        counts[`${suit}${n1}`] > 0 &&
+        counts[`${suit}${n2}`] > 0 &&
+        counts[`${suit}${n3}`] > 0
+      ) {
+        const newCounts = { ...counts };
+        newCounts[`${suit}${n1}`]--;
+        newCounts[`${suit}${n2}`]--;
+        newCounts[`${suit}${n3}`]--;
+        if (canFormSets(newCounts, n - 1)) {
+          return true;
+        }
+      }
+    }
+  }
   return false;
 }
 
@@ -182,7 +355,8 @@ export function detectBestPattern(hand, playerWind, tableWind, flowers, animals)
       return { pattern: pattern.name, tai: pattern.tai };
     }
   }
-  return { pattern: 'Basic Win', tai: 1 };
+  // If no pattern matches, return Incomplete Hand
+  return { pattern: 'Incomplete Hand', tai: 0 };
 }
 
 // Returns extra tai for pongs/kongs of seat wind and prevailing wind

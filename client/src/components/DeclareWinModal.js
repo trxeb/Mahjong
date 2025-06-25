@@ -47,9 +47,12 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
     const selectedHand = handTypes.find(h => h.name === handType);
     if (selectedHand && selectedHand.tai !== null) {
       setTaiValue(selectedHand.tai);
+      if (handType !== 'Hand from Tiles') {
+        setWindTai(0);
+      }
     } else if (handType !== 'Hand from Tiles') {
-      // Default to 1 if switching back to Custom Tai
       setTaiValue(1);
+      setWindTai(0);
     }
   }, [handType]);
 
@@ -127,10 +130,8 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
 
   return (
     <>
-      <Modal isOpen={isOpen} toggle={toggle} centered>
-        <ModalHeader toggle={toggle} className="win-modal-header">
-          🎉 Declare Win (胡)
-        </ModalHeader>
+      <Modal isOpen={isOpen} toggle={toggle} size="lg" className="win-modal">
+        <ModalHeader toggle={toggle}>Declare Win</ModalHeader>
         <ModalBody>
           <Form>
             <FormGroup>
