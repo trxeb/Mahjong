@@ -53,9 +53,14 @@ const RecordsPage = () => {
     const [winnerModalOpen, setWinnerModalOpen] = useState(false);
     const [gameWinner, setGameWinner] = useState(null);
     const [taiSettings, setTaiSettings] = useState(defaultTaiSettings);
-    const [taiForm, setTaiForm] = useState({ ...defaultTaiSettings });
+    const [taiForm, setTaiForm] = useState(defaultTaiSettings); // keep for editing
     const [taiLoading, setTaiLoading] = useState(true);
     const [isMingGangSelfDrawn, setIsMingGangSelfDrawn] = useState(false);
+
+    // Sync taiForm with taiSettings when taiSettings changes
+    useEffect(() => {
+        setTaiForm(taiSettings);
+    }, [taiSettings]);
 
     useEffect(() => {
         if (!roomCode) return;
@@ -67,8 +72,7 @@ const RecordsPage = () => {
                 const roomData = docSnap.data();
                 setRoom(roomData);
                 const newTai = roomData.taiSettings || defaultTaiSettings;
-                setTaiSettings(newTai);
-                setTaiForm(newTai);
+                setTaiSettings(newTai); // This will trigger the above effect to update taiForm
                 setTaiLoading(false);
 
                 if (roomData.status === 'finished') {
@@ -483,7 +487,10 @@ const RecordsPage = () => {
         if (!roomCode) return;
         const roomRef = doc(db, 'rooms', roomCode);
         await updateDoc(roomRef, { taiSettings: taiForm });
+        // No need to manually setTaiSettings here; Firestore onSnapshot will update it
     };
+
+    // When calculating tai for a win, always use taiSettings (not taiForm or defaultTaiSettings)
 
     if (!roomExists) {
         return (
@@ -518,6 +525,7 @@ const RecordsPage = () => {
                 currentUser={currentUser}
                 room={room}
                 onDeclare={handleDeclareWin}
+                taiSettings={taiSettings} // <-- Add this line
             />
             <Modal isOpen={winnerModalOpen} toggle={handleCloseWinnerModalAndRedirect} centered>
                 <ModalHeader>Game Over!</ModalHeader>
