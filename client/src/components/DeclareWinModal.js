@@ -10,25 +10,21 @@ import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
 import SelectWinTilesModal from './SelectWinTilesModal';
 import { detectBestPattern, countWindTai } from '../constants/mahjong';
 
-const handTypes = [
-  // Basic Combinations
-  { name: 'Pong Pong (對對胡 / All Pungs)', tai: 2 },
-  { name: 'Ping Hu (平胡 / All Chows)', tai: 4 },
-  { name: 'Cao Ping Hu (草平胡 / Ruined Ping Hu)', tai: 1 },
-  // Advanced Combinations
-  { name: 'Half-Colour (Same Suit + Big Cards)', tai: 2 },
-  { name: 'Half-Colour Pong Pong (Same Suit + Big Cards + All Pungs)', tai: 4 },
-  { name: 'Full-Colour (Same Suit Only)', tai: 4 },
-  { name: 'Full-Colour Ping Hu (Same Suit + Ping Hu)', tai: 5 },
-  // Rare Combinations
-  { name: 'Seven Pairs (七对子)', tai: 5 },
-  { name: 'Thirteen Orphans (十三么)', tai: 5 },
-  // Bonus: fallback and custom
+const buildHandTypes = (taiSettings) => [
+  { name: 'Pong Pong (對對胡 / All Pungs)', tai: taiSettings.pongPong },
+  { name: 'Ping Hu (平胡 / All Chows)', tai: taiSettings.pingHu },
+  { name: 'Cao Ping Hu (草平胡 / Ruined Ping Hu)', tai: taiSettings.caoPingHu },
+  { name: 'Half-Colour (Same Suit + Big Cards)', tai: taiSettings.halfColour },
+  { name: 'Half-Colour Pong Pong (Same Suit + Big Cards + All Pungs)', tai: taiSettings.halfColourPongPong },
+  { name: 'Full-Colour (Same Suit Only)', tai: taiSettings.fullColour },
+  { name: 'Full-Colour Ping Hu (Same Suit + Ping Hu)', tai: taiSettings.fullColourPingHu },
+  { name: 'Seven Pairs (七对子)', tai: taiSettings.sevenPairs },
+  { name: 'Thirteen Orphans (十三么)', tai: taiSettings.thirteenOrphans },
   { name: 'Custom Tai', tai: null },
-  { name: 'Hand from Tiles', tai: null, hidden: true }, // For internal use
+  { name: 'Hand from Tiles', tai: null, hidden: true },
 ];
 
-const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare }) => {
+const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare, taiSettings }) => {
   const [isSelfDrawn, setIsSelfDrawn] = useState(false);
   const [losingPlayerId, setLosingPlayerId] = useState('');
   const [taiValue, setTaiValue] = useState(1);
@@ -47,12 +43,9 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
     const selectedHand = handTypes.find(h => h.name === handType);
     if (selectedHand && selectedHand.tai !== null) {
       setTaiValue(selectedHand.tai);
-      if (handType !== 'Hand from Tiles') {
-        setWindTai(0);
-      }
     } else if (handType !== 'Hand from Tiles') {
+      // Default to 1 if switching back to Custom Tai
       setTaiValue(1);
-      setWindTai(0);
     }
   }, [handType]);
 
@@ -128,10 +121,15 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
     return baseTai + extra;
   };
 
+  // Use taiSettings from props to build handTypes
+  const handTypes = buildHandTypes(taiSettings || {});
+
   return (
     <>
-      <Modal isOpen={isOpen} toggle={toggle} size="lg" className="win-modal">
-        <ModalHeader toggle={toggle}>Declare Win</ModalHeader>
+      <Modal isOpen={isOpen} toggle={toggle} centered>
+        <ModalHeader toggle={toggle} className="win-modal-header">
+          🎉 Declare Win (胡)
+        </ModalHeader>
         <ModalBody>
           <Form>
             <FormGroup>
@@ -232,4 +230,4 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
   );
 };
 
-export default DeclareWinModal; 
+export default DeclareWinModal;
