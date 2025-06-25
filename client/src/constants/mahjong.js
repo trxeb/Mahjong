@@ -1,67 +1,68 @@
 const SEASONS = [
-    { id: 's1', name: 'Spring (春)', value: 1, group: 'SEASONS', unicode: '🀢' },
-    { id: 's2', name: 'Summer (夏)', value: 2, group: 'SEASONS', unicode: '🀣' },
-    { id: 's3', name: 'Autumn (秋)', value: 3, group: 'SEASONS', unicode: '🀤' },
-    { id: 's4', name: 'Winter (冬)', value: 4, group: 'SEASONS', unicode: '🀥' },
+  { id: 's1', name: 'Spring (春)', value: 1, group: 'SEASONS', unicode: '🀢' },
+  { id: 's2', name: 'Summer (夏)', value: 2, group: 'SEASONS', unicode: '🀣' },
+  { id: 's3', name: 'Autumn (秋)', value: 3, group: 'SEASONS', unicode: '🀤' },
+  { id: 's4', name: 'Winter (冬)', value: 4, group: 'SEASONS', unicode: '🀥' },
 ];
 
 const FLOWERS = [
-    { id: 'f1', name: 'Plum (梅)', value: 1, group: 'FLOWERS', unicode: '🀦' },
-    { id: 'f2', name: 'Orchid (蘭)', value: 2, group: 'FLOWERS', unicode: '🀧' },
-    { id: 'f3', name: 'Chrysanthemum (菊)', value: 3, group: 'FLOWERS', unicode: '🀨' },
-    { id: 'f4', name: 'Bamboo (竹)', value: 4, group: 'FLOWERS', unicode: '🀩' },
+  { id: 'f1', name: 'Plum (梅)', value: 1, group: 'FLOWERS', unicode: '🀦' },
+  { id: 'f2', name: 'Orchid (蘭)', value: 2, group: 'FLOWERS', unicode: '🀧' },
+  { id: 'f3', name: 'Chrysanthemum (菊)', value: 3, group: 'FLOWERS', unicode: '🀨' },
+  { id: 'f4', name: 'Bamboo (竹)', value: 4, group: 'FLOWERS', unicode: '🀩' },
 ];
 
 const ANIMALS = [
-    { id: 'a1', name: 'Cat (貓)', group: 'ANIMALS', value: 1 },
-    { id: 'a2', name: 'Rat (鼠)', group: 'ANIMALS', value: 2 },
-    { id: 'a3', name: 'Rooster (公鸡)', group: 'ANIMALS', value: 3 },
-    { id: 'a4', name: 'Centipede (蜈蚣)', group: 'ANIMALS', value: 4 },
+  { id: 'a1', name: 'Cat (貓)', group: 'ANIMALS', value: 1 },
+  { id: 'a2', name: 'Rat (鼠)', group: 'ANIMALS', value: 2 },
+  { id: 'a3', name: 'Rooster (公鸡)', group: 'ANIMALS', value: 3 },
+  { id: 'a4', name: 'Centipede (蜈蚣)', group: 'ANIMALS', value: 4 },
 ];
 
 export const FLOWER_TILES = {
-    SEASONS,
-    FLOWERS,
-    ANIMALS,
+  SEASONS,
+  FLOWERS,
+  ANIMALS,
 };
 
 export const ALL_FLOWER_TILES = [...SEASONS, ...FLOWERS, ...ANIMALS];
 
-const createSuit = (suit, count, name_zh_prefix) => 
-    Array.from({ length: count }, (_, i) => ({
-        id: `${suit}${i + 1}`,
-        name: `${i + 1} ${suit}`,
-        name_zh: `${['一', '二', '三', '四', '五', '六', '七', '八', '九'][i]}${name_zh_prefix}`,
-        suit: suit,
-        value: i + 1,
-        unicode: (suit === 'Dots' ? ['🀇', '🀈', '🀉', '🀊', '🀋', '🀌', '🀍', '🀎', '🀏']
-            : suit === 'Bamboo' ? ['🀐', '🀑', '🀒', '🀓', '🀔', '🀕', '🀖', '🀗', '🀘']
-            : ['🀙', '🀚', '🀛', '🀜', '🀝', '🀞', '🀟', '🀠', '🀡'])[i]
-    }));
+const createSuit = (suit, count, name_zh_prefix) =>
+  Array.from({ length: count }, (_, i) => ({
+    id: `${suit}${i + 1}`,
+    name: `${i + 1} ${suit}`,
+    name_zh: `${['一', '二', '三', '四', '五', '六', '七', '八', '九'][i]}${name_zh_prefix}`,
+    suit: suit,
+    value: i + 1,
+    group: 'SUITS',
+    unicode: (suit === 'Dots' ? ['🀇', '🀈', '🀉', '🀊', '🀋', '🀌', '🀍', '🀎', '🀏']
+      : suit === 'Bamboo' ? ['🀐', '🀑', '🀒', '🀓', '🀔', '🀕', '🀖', '🀗', '🀘']
+        : ['🀙', '🀚', '🀛', '🀜', '🀝', '🀞', '🀟', '🀠', '🀡'])[i]
+  }));
 
 export const SUITS = {
-    DOTS: createSuit('Dots', 9, '筒'),
-    BAMBOO: createSuit('Bamboo', 9, '索'),
-    CHARACTERS: createSuit('Characters', 9, '萬'),
+  DOTS: createSuit('Dots', 9, '筒'),
+  BAMBOO: createSuit('Bamboo', 9, '索'),
+  CHARACTERS: createSuit('Characters', 9, '萬'),
 };
 
 export const HONORS = {
-    WINDS: [
-        { id: 'E', name: 'East Wind', name_zh: '東', suit: 'Wind', value: 'E', unicode: '🀀' },
-        { id: 'S', name: 'South Wind', name_zh: '南', suit: 'Wind', value: 'S', unicode: '🀁' },
-        { id: 'W', name: 'West Wind', name_zh: '西', suit: 'Wind', value: 'W', unicode: '🀂' },
-        { id: 'N', 'name': 'North Wind', name_zh: '北', suit: 'Wind', value: 'N', unicode: '🀃' },
-    ],
-    DRAGONS: [
-        { id: 'Red', name: 'Red Dragon (中)', name_zh: '中', suit: 'Dragon', value: 'Red', unicode: '🀄︎' },
-        { id: 'Green', name: 'Green Dragon (發)', name_zh: '發', suit: 'Dragon', value: 'Green', unicode: '🀅' },
-        { id: 'White', name: 'White Dragon (白)', name_zh: '白', suit: 'Dragon', value: 'White', unicode: '🀆' },
-    ]
+  WINDS: [
+    { id: 'E', name: 'East Wind', name_zh: '東', suit: 'Wind', value: 'E', group: 'HONORS', unicode: '🀀' },
+    { id: 'S', name: 'South Wind', name_zh: '南', suit: 'Wind', value: 'S', group: 'HONORS', unicode: '🀁' },
+    { id: 'W', name: 'West Wind', name_zh: '西', suit: 'Wind', value: 'W', group: 'HONORS', unicode: '🀂' },
+    { id: 'N', name: 'North Wind', name_zh: '北', suit: 'Wind', value: 'N', group: 'HONORS', unicode: '🀃' },
+  ],
+  DRAGONS: [
+    { id: 'Red', name: 'Red Dragon (中)', name_zh: '中', suit: 'Dragon', value: 'Red', group: 'HONORS', unicode: '🀄︎' },
+    { id: 'Green', name: 'Green Dragon (發)', name_zh: '發', suit: 'Dragon', value: 'Green', group: 'HONORS', unicode: '🀅' },
+    { id: 'White', name: 'White Dragon (白)', name_zh: '白', suit: 'Dragon', value: 'White', group: 'HONORS', unicode: '🀆' },
+  ]
 };
 
 export const ALL_PLAYING_TILES = [
-    ...SUITS.DOTS, ...SUITS.BAMBOO, ...SUITS.CHARACTERS,
-    ...HONORS.WINDS, ...HONORS.DRAGONS
+  ...SUITS.DOTS, ...SUITS.BAMBOO, ...SUITS.CHARACTERS,
+  ...HONORS.WINDS, ...HONORS.DRAGONS
 ];
 
 // Mahjong pattern detection framework
@@ -73,11 +74,11 @@ const patterns = [
       // 1 & 9 of each suit, all winds, all dragons, and any pair
       const required = [
         // 1 & 9 of each suit
-        'Dots1','Dots9','Bamboo1','Bamboo9','Characters1','Characters9',
+        'Dots1', 'Dots9', 'Bamboo1', 'Bamboo9', 'Characters1', 'Characters9',
         // Winds
-        'E','S','W','N',
+        'E', 'S', 'W', 'N',
         // Dragons
-        'Red','Green','White'
+        'Red', 'Green', 'White'
       ];
       const ids = hand.map(t => t.id);
       const unique = new Set(ids);
@@ -104,11 +105,10 @@ const patterns = [
     name: 'Full-Colour Ping Hu (Same Suit + Ping Hu)',
     tai: 5,
     detect: (hand) => {
-      // All tiles from same suit, and isPingHu
       const suits = hand.filter(t => t.group === 'SUITS').map(t => t.suit);
       const uniqueSuits = new Set(suits);
       const bigCards = hand.filter(t => t.group === 'HONORS');
-      return uniqueSuits.size === 1 && bigCards.length === 0 && isPingHu(hand);
+      return hand.length === 14 && uniqueSuits.size === 1 && bigCards.length === 0 && isPingHu(hand);
     }
   },
   {
@@ -158,193 +158,97 @@ const patterns = [
       return isPingHu(hand) && ((flowers && flowers.length > 0) || (animals && animals.length > 0));
     }
   },
-  {
-    name: 'Mixed (Chows and Pungs)',
-    tai: 0,
-    detect: (hand) => isMixedHand(hand)
-  },
 ];
 
 // Helper: Pong Pong (All Pungs)
 function isPongPong(hand) {
-  if (hand.length !== 14) return false;
-  // Count occurrences of each tile
   const counts = {};
   hand.forEach(tile => { counts[tile.id] = (counts[tile.id] || 0) + 1; });
   const values = Object.values(counts);
-  // Must have exactly 5 unique tile types: 4 pungs (3 each), 1 pair (2)
-  if (values.length !== 5) return false;
-  if (values.filter(v => v === 3).length !== 4) return false;
-  if (values.filter(v => v === 2).length !== 1) return false;
-  if (values.some(v => v > 3)) return false; // No kongs allowed
-  return true;
+  return values.filter(v => v === 2).length === 1 && values.filter(v => v === 3).length === 4;
 }
-
-// Helper: Recursively check if the remaining tiles can form n pungs (no kongs/quads)
-function canFormPungsStrict(counts, n) {
-  if (n === 0) {
-    // All pungs formed, check if all tiles are used
-    return Object.values(counts).every(v => v === 0);
-  }
-  // Try to find a pung (3 of a kind, not 4)
-  for (const [tileId, count] of Object.entries(counts)) {
-    if (count === 3) {
-      const newCounts = { ...counts };
-      newCounts[tileId] -= 3;
-      if (canFormPungsStrict(newCounts, n - 1)) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-// Check if any suit group contains a chow (sequence) in the remaining tiles
-function hasChowLeft(counts) {
-  const suitGroups = ['Dots', 'Bamboo', 'Characters'];
-  for (const suit of suitGroups) {
-    // Get all tile numbers for this suit
-    const nums = Object.keys(counts)
-      .filter(id => id.startsWith(suit) && counts[id] > 0)
-      .map(id => parseInt(id.replace(suit, '')))
-      .sort((a, b) => a - b);
-    // Check for any sequence of 3 consecutive numbers
-    for (let i = 0; i < nums.length - 2; i++) {
-      if (
-        counts[`${suit}${nums[i]}`] > 0 &&
-        counts[`${suit}${nums[i + 1]}`] > 0 &&
-        counts[`${suit}${nums[i + 2]}`] > 0
-      ) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 // Helper: Ping Hu (All Chows + 1 pair, no big cards in pair, no longkang wait)
 function isPingHu(hand) {
   if (hand.length !== 14) return false;
-  // Count occurrences of each tile
-  const counts = {};
-  hand.forEach(tile => { counts[tile.id] = (counts[tile.id] || 0) + 1; });
 
-  // Try all possible pairs (must not be an honor tile)
-  for (const [tileId, count] of Object.entries(counts)) {
-    // Only allow pair in suits, not honors
-    if (count >= 2 && !isHonorTile(tileId)) {
-      const newCounts = { ...counts };
-      newCounts[tileId] -= 2;
-      if (canFormChowsOnly(newCounts, 4)) {
-        return true;
-      }
+  // Clone and sort hand
+  const sortedHand = [...hand].sort((a, b) => {
+    if (a.suit === b.suit) return a.value - b.value;
+    return a.suit.localeCompare(b.suit);
+  });
+
+  // Find all possible pairs (non-honors)
+  const possiblePairs = [];
+  for (let i = 0; i < sortedHand.length - 1; i++) {
+    if (sortedHand[i].id === sortedHand[i + 1].id &&
+      sortedHand[i].group !== 'HONORS') {
+      possiblePairs.push([i, i + 1]);
     }
   }
+
+  // Try each possible pair
+  for (const [i, j] of possiblePairs) {
+    const remaining = [...sortedHand];
+    remaining.splice(j, 1); // Remove pair tiles (backwards to preserve indices)
+    remaining.splice(i, 1);
+
+    if (canFormAllChows(remaining)) {
+      return true;
+    }
+  }
+
   return false;
 }
 
-// Helper: Recursively check if the remaining tiles can form n chows (no pungs allowed)
-function canFormChowsOnly(counts, n) {
-  if (n === 0) {
-    // All chows formed, check if all tiles are used
-    return Object.values(counts).every(v => v === 0);
+function canFormAllChows(tiles) {
+  if (tiles.length === 0) return true;
+
+  // Try to find a chow starting with first tile
+  const first = tiles[0];
+  if (first.group !== 'SUITS') return false;
+
+  // Find possible chow combinations
+  const chow1 = tiles.find(t => t.suit === first.suit && t.value === first.value + 1);
+  const chow2 = tiles.find(t => t.suit === first.suit && t.value === first.value + 2);
+
+  if (chow1 && chow2) {
+    // Remove this chow and recurse
+    const remaining = tiles.filter((t, idx) =>
+      idx !== 0 && t.id !== chow1.id && t.id !== chow2.id);
+    return canFormAllChows(remaining);
   }
-  // Only try to find a chow (no pungs)
-  const suits = ['Dots', 'Bamboo', 'Characters'];
-  for (const suit of suits) {
-    const nums = Object.keys(counts)
-      .filter(id => id.startsWith(suit) && counts[id] > 0)
-      .map(id => parseInt(id.replace(suit, '')))
-      .sort((a, b) => a - b);
-    for (let i = 0; i < nums.length - 2; i++) {
-      const n1 = nums[i], n2 = nums[i + 1], n3 = nums[i + 2];
-      if (
-        n2 === n1 + 1 && n3 === n2 + 1 &&
-        counts[`${suit}${n1}`] > 0 &&
-        counts[`${suit}${n2}`] > 0 &&
-        counts[`${suit}${n3}`] > 0
-      ) {
-        const newCounts = { ...counts };
-        newCounts[`${suit}${n1}`]--;
-        newCounts[`${suit}${n2}`]--;
-        newCounts[`${suit}${n3}`]--;
-        if (canFormChowsOnly(newCounts, n - 1)) {
-          return true;
-        }
-      }
-    }
-  }
+
   return false;
 }
 
-// Helper: Check if a tile is an honor tile (winds or dragons)
-function isHonorTile(tileId) {
-  return (
-    tileId === 'E' || tileId === 'S' || tileId === 'W' || tileId === 'N' ||
-    tileId === 'Red' || tileId === 'Green' || tileId === 'White'
-  );
-}
+function canBeChowsOnly(tiles) {
+  if (tiles.length === 0) return true;
+  if (tiles.length < 3) return false;
 
-// Helper: Mixed (Chows and Pungs, not all chows or all pungs)
-function isMixedHand(hand) {
-  if (hand.length !== 14) return false;
-  // Must not be all chows or all pungs
-  if (isPingHu(hand) || isPongPong(hand)) return false;
-  // Try all possible pairs
-  const counts = {};
-  hand.forEach(tile => { counts[tile.id] = (counts[tile.id] || 0) + 1; });
-  for (const [tileId, count] of Object.entries(counts)) {
-    if (count >= 2) {
-      const newCounts = { ...counts };
-      newCounts[tileId] -= 2;
-      if (canFormSets(newCounts, 4)) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
+  const first = tiles[0];
 
-// Helper: Recursively check if the remaining tiles can form n sets (chow or pung)
-function canFormSets(counts, n) {
-  if (n === 0) {
-    return Object.values(counts).every(v => v === 0);
+  // Try to form a chow with first tile
+  if (first.group !== 'SUITS') return false;
+
+  const needed1 = tiles.find(t => t.suit === first.suit && t.value === first.value + 1);
+  const needed2 = tiles.find(t => t.suit === first.suit && t.value === first.value + 2);
+
+  if (needed1 && needed2) {
+    // Remove the chow tiles and recurse
+    const remaining = tiles.slice();
+    const indexesToRemove = [];
+
+    // remove in reverse index order to avoid shifting
+    [first, needed1, needed2].forEach(tile => {
+      const idx = remaining.findIndex(t => t.id === tile.id);
+      if (idx !== -1) indexesToRemove.push(idx);
+    });
+
+    indexesToRemove.sort((a, b) => b - a).forEach(i => remaining.splice(i, 1));
+
+    return canBeChowsOnly(remaining);
   }
-  // Try to find a pung
-  for (const [tileId, count] of Object.entries(counts)) {
-    if (count >= 3) {
-      const newCounts = { ...counts };
-      newCounts[tileId] -= 3;
-      if (canFormSets(newCounts, n - 1)) {
-        return true;
-      }
-    }
-  }
-  // Try to find a chow
-  const suits = ['Dots', 'Bamboo', 'Characters'];
-  for (const suit of suits) {
-    const nums = Object.keys(counts)
-      .filter(id => id.startsWith(suit) && counts[id] > 0)
-      .map(id => parseInt(id.replace(suit, '')))
-      .sort((a, b) => a - b);
-    for (let i = 0; i < nums.length - 2; i++) {
-      const n1 = nums[i], n2 = nums[i + 1], n3 = nums[i + 2];
-      if (
-        n2 === n1 + 1 && n3 === n2 + 1 &&
-        counts[`${suit}${n1}`] > 0 &&
-        counts[`${suit}${n2}`] > 0 &&
-        counts[`${suit}${n3}`] > 0
-      ) {
-        const newCounts = { ...counts };
-        newCounts[`${suit}${n1}`]--;
-        newCounts[`${suit}${n2}`]--;
-        newCounts[`${suit}${n3}`]--;
-        if (canFormSets(newCounts, n - 1)) {
-          return true;
-        }
-      }
-    }
-  }
+
   return false;
 }
 
@@ -355,8 +259,7 @@ export function detectBestPattern(hand, playerWind, tableWind, flowers, animals)
       return { pattern: pattern.name, tai: pattern.tai };
     }
   }
-  // If no pattern matches, return Incomplete Hand
-  return { pattern: 'Incomplete Hand', tai: 0 };
+  return { pattern: 'Basic Win', tai: 1 };
 }
 
 // Returns extra tai for pongs/kongs of seat wind and prevailing wind
