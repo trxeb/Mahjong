@@ -53,14 +53,13 @@ const SelectWinTilesModal = ({ isOpen, toggle, onConfirm, playerWind, tableWind 
             return currentTiles;
         });
     };
-    
+
     const calculateTai = (hand) => {
-        // Use the robust pattern detection
         if (hand.length === TILE_LIMIT) {
-            const { pattern, tai } = detectBestPattern(hand);
-            // Add wind tai
+            // Pass all arguments for robust detection
+            const { pattern, tai } = detectBestPattern(hand, playerWind, tableWind);
             const windTai = countWindTai(hand, playerWind, tableWind);
-            return { pattern, tai: tai + windTai, windTai };
+            return { pattern, tai, windTai };
         }
         return { pattern: 'Incomplete Hand', tai: 0, windTai: 0 };
     };
@@ -87,7 +86,7 @@ const SelectWinTilesModal = ({ isOpen, toggle, onConfirm, playerWind, tableWind 
                         <Tile key={`${tile.id}-${index}`} tile={tile} onClick={() => handleRemoveTile(tile)} count={0} />
                     )) : <p className="text-muted">Select your winning hand...</p>}
                 </div>
-                
+
                 <TileSection title="萬子 (Characters)" tiles={SUITS.CHARACTERS} onTileClick={handleTileClick} selectedCounts={selectedCounts} />
                 <TileSection title="筒子 (Circles)" tiles={SUITS.DOTS} onTileClick={handleTileClick} selectedCounts={selectedCounts} />
                 <TileSection title="索子 (Bamboos)" tiles={SUITS.BAMBOO} onTileClick={handleTileClick} selectedCounts={selectedCounts} />
@@ -110,4 +109,4 @@ const SelectWinTilesModal = ({ isOpen, toggle, onConfirm, playerWind, tableWind 
     );
 };
 
-export default SelectWinTilesModal; 
+export default SelectWinTilesModal;

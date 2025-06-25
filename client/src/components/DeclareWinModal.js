@@ -98,8 +98,13 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
     setWinningHand(hand);
     setTaiValue(calculatedTai);
     setWindTai(windTai || 0);
-    // Try to match detectedPattern to a handType
-    const match = handTypes.find(h => detectedPattern && detectedPattern.startsWith(h.name));
+
+    // Improved matching: case-insensitive, partial match
+    const match = handTypes.find(h =>
+      detectedPattern &&
+      (h.name.toLowerCase().includes(detectedPattern.toLowerCase()) ||
+       detectedPattern.toLowerCase().includes(h.name.toLowerCase()))
+    );
     if (match) {
       setHandType(match.name);
     } else if (detectedPattern && detectedPattern !== 'Incomplete Hand') {
