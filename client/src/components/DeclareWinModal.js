@@ -180,13 +180,13 @@ const DeclareWinModal = ({ isOpen, toggle, players, currentUser, room, onDeclare
             <FormGroup check className="mb-2">
               <Label check>
                 <Input type="checkbox" checked={seatWindTaiChecked} onChange={() => setSeatWindTaiChecked(v => !v)} disabled={handType === 'Hand from Tiles'} />
-                +1 Tai for Pong/Kong of My Seat Wind
+                +1 Tai for Pong/Gang of My Seat Wind
               </Label>
             </FormGroup>
             <FormGroup check className="mb-2">
               <Label check>
                 <Input type="checkbox" checked={roundWindTaiChecked} onChange={() => setRoundWindTaiChecked(v => !v)} disabled={handType === 'Hand from Tiles'} />
-                +1 Tai for Pong/Kong of Prevailing Wind
+                +1 Tai for Pong/Gang of Prevailing Wind
               </Label>
             </FormGroup>
             {handType === 'Custom Tai' ? (
