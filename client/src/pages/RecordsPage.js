@@ -374,12 +374,19 @@ const RecordsPage = () => {
             // Dealer rotates to next player (clockwise)
             nextDealerIndex = (dealerIndex + 1) % updatedPlayers.length;
             nextDealerRotationCount = dealerRotationCount + 1;
-            // Rotate player winds clockwise
+            // Robust wind rotation: sort by wind, rotate, then reassign
             const clockwiseWinds = ['East (東)', 'South (南)', 'West (西)', 'North (北)'];
-            updatedPlayers = updatedPlayers.map(p => {
-                const idx = clockwiseWinds.indexOf(p.wind);
-                return { ...p, wind: clockwiseWinds[(idx + 1) % 4] };
-            });
+            // 1. Sort players by wind order
+            const windToPlayer = {};
+            updatedPlayers.forEach(p => { windToPlayer[p.wind] = p; });
+            const sortedPlayers = clockwiseWinds.map(wind => windToPlayer[wind]).filter(Boolean);
+            // 2. Rotate winds array by 1 (clockwise)
+            const rotatedWinds = clockwiseWinds.map((_, i, arr) => arr[(i + arr.length - 1) % arr.length]);
+            // 3. Assign rotated winds to sorted players
+            sortedPlayers.forEach((p, i) => { p.wind = rotatedWinds[i]; });
+            // 4. Restore original player order by uid
+            const playerMap = Object.fromEntries(sortedPlayers.map(p => [p.uid, p]));
+            updatedPlayers = updatedPlayers.map(p => playerMap[p.uid] || p);
             // Re-apply winner's updated score and gamesWon
             const winnerUid = currentUser.uid;
             const winnerInArray = updatedPlayers.find(p => p.uid === winnerUid);
